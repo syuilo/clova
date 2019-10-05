@@ -118,6 +118,10 @@ export class Game {
 		return this.store.state.turn;
 	}
 
+	private get field() {
+		return this.store.state.field;
+	}
+
 	private get currentPlayer(): Player {
 		return this.players[this.turn];
 	}
@@ -144,6 +148,11 @@ export class Game {
 
 	private pushLog(log: Log) {
 		this.lo
+	}
+
+	public getCardPos(card: Card): number | null {
+		const index = this.field.findIndex(cell => cell.type === 'unit' && cell.card.id === card.id);
+		return index > -1 ? index : null;
 	}
 
 	private draw(player: number): Card | null {

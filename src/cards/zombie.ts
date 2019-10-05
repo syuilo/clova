@@ -11,10 +11,10 @@ export default {
 	ap: 300,
 	cost: 3,
 	setup: (ctx: Context) => {
-		const destoryedPosition: number | null = null;
+		let destoryedPosition: number | null = null;
 	
 		ctx.thisCard.onBeforeDestroy = () => {
-			destoryedPosition = ctx.thisCard.pos;
+			destoryedPosition = ctx.game.getCardPos(ctx.thisCard);
 		};
 
 		ctx.thisCard.onDestroyed = () => {
