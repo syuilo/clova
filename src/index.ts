@@ -1,3 +1,5 @@
+import { Store } from "./store";
+
 type Cell = {
 	type: 'empty';
 } | {
@@ -48,6 +50,19 @@ export class Player {
 const FIELD_WIDTH = 3;
 const FIELD_HEIGHT = 4;
 
+type State = {
+	field: Field;
+	players: Player[];
+	turn: number;
+	winner: number | null;
+};
+
+type Action = {
+	type: string;
+	payload: Record<string, any>;
+};
+
+/*
 class Store {
 	private commits: Store['_state'][];
 
@@ -84,18 +99,18 @@ class Store {
 		// TODO
 	}
 }
-
+*/
 export class Game {
 	private cards: CardDef[];
 	private logs: Log[];
-	private store: Store;
+	private store: Store<State, Action>;
 
 	constructor(cards: Game['cards'], players: Game['players']) {
 		const empty = () => ({
 			type: 'empty' as const
 		});
 
-		this.store = new Store({
+		this.store = new Store<State, Action>({
 			players: players,
 			field: [
 				empty(), empty(), empty(),
@@ -105,6 +120,12 @@ export class Game {
 			],
 			turn: 0,
 			winner: null
+		}, (state, action) => {
+			state = JSON.parse(JSON.stringify(state)); // copy
+			switch (action.type) {
+				case 'draw': return this.applyDraw(state, action.payload);
+				default: throw new Error('Unknown action: ' + action.type);
+			}
 		});
 
 		this.cards = cards;
@@ -155,16 +176,22 @@ export class Game {
 		return index > -1 ? index : null;
 	}
 
-	private draw(player: number): Card | null {
-		const card = this.players[player].deck.pop() || null;
-		if (card === null) {
-			this.commit({
-				player: player,
-				type: 'lose',
-				reason: 'noDeck'
-			});
+	public draw(player: number): Card | null {
+		this.store.commit({ type: 'draw', payload: { player: player } });
+	}
+
+	private applyDraw(state: State, payload: Record<string, any>): State {
+		const { player } = payload;
+
+		const card = state.players[player].deck.pop();
+
+		if (card === undefined) {
+			state.winner = player === 0 ? 1 : 0;
+		} else {
+			state.players[player].hand.push(card);
 		}
-		return card;
+
+		return state;
 	}
 
 	public start(): void {

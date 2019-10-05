@@ -1,6 +1,6 @@
 type Transition<State, Operation> = (state: State, operation: Operation) => State;
 
-class Store<State, Operation> {
+export class Store<State, Operation> {
 	private initialState: State;
 	private operations: Operation[] = [];
 	private transition: Transition<State, Operation>;
