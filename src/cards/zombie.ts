@@ -12,10 +12,10 @@ export default {
 	ap: 300,
 	cost: 3,
 	setup: (ctx: Context) => {
-		let destoryedPosition: number | null = null;
+		let destroyedPosition: number | null = null;
 	
 		ctx.thisCard.onBeforeDestroy = () => {
-			destoryedPosition = ctx.game.getCardPos(ctx.thisCard);
+			destroyedPosition = ctx.game.getCardPos(ctx.thisCard);
 		};
 
 		ctx.thisCard.onDestroyed = () => {
@@ -25,8 +25,8 @@ export default {
 			}, {
 				text: 'rebirth',
 				callback: () => {
-					ctx.game.damege(ctx.thisCard.owner, 500);
-					ctx.game.summon(ctx.thisCard, destoryedPosition!);
+					ctx.game.damage(ctx.thisCard.owner, 500);
+					ctx.game.summon(ctx.thisCard, destroyedPosition!);
 				}
 			}]);
 		};

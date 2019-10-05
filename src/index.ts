@@ -1,4 +1,9 @@
-import { Store } from "./store";
+import { Store } from './store';
+
+type Action = {
+	type: string;
+	payload: Record<string, any>;
+};
 
 type Cell = {
 	type: 'empty';
@@ -23,11 +28,16 @@ type Log = {
 });
 
 type CardDef = {
-	type: 'unit' | 'spell';
 	id: string;
+	type: string;
 	cost: number;
+} & ({
+	type: 'unit';
 	setup: (ctx: Context) => void;
-};
+} | {
+	type: 'spell';
+	action: (ctx: Context) => void;
+});
 
 type Card = {
 	def: CardDef['id'];
@@ -55,11 +65,6 @@ type State = {
 	players: Player[];
 	turn: number;
 	winner: number | null;
-};
-
-type Action = {
-	type: string;
-	payload: Record<string, any>;
 };
 
 /*
@@ -100,9 +105,42 @@ class Store {
 	}
 }
 */
+
+export class Context {
+	public game: Game;
+	public thisCard: Card;
+	private state: State;
+
+	constructor(game: Context['game'], thisCard: Context['thisCard'], state: Context['state']) {
+		this.game = game;
+		this.thisCard = thisCard;
+		this.state = state;
+	}
+
+	public draw(player: number): Card | null {
+		const deck = this.game.players[player].deck;
+	
+		// デッキの一番上にあるカードを取得
+		const card = deck[0];
+
+		if (card === undefined) {
+			// デッキがなくなったら負け
+			this.state.winner = player === 0 ? 1 : 0;
+			return null;
+		} else {
+			deck.shift();
+			this.state.players[player].hand.push(card);
+			return card;
+		}
+	}
+
+	public showCardChoices() {
+		
+	}
+}
+
 export class Game {
 	private cards: CardDef[];
-	private logs: Log[];
 	private store: Store<State, Action>;
 
 	constructor(cards: Game['cards'], players: Game['players']) {
@@ -120,18 +158,12 @@ export class Game {
 			],
 			turn: 0,
 			winner: null
-		}, (state, action) => {
-			state = JSON.parse(JSON.stringify(state)); // copy
-			switch (action.type) {
-				case 'draw': return this.applyDraw(state, action.payload);
-				default: throw new Error('Unknown action: ' + action.type);
-			}
-		});
+		}, this.applyAction);
 
 		this.cards = cards;
 	}
 
-	private get players() {
+	public get players() {
 		return this.store.state.players;
 	}
 
@@ -147,28 +179,38 @@ export class Game {
 		return this.players[this.turn];
 	}
 
+	private applyAction(state: State, action: Action): State {
+		state = JSON.parse(JSON.stringify(state)); // copy
+		switch (action.type) {
+			case 'useSpell': return this.applyUseSpell(state, action.payload);
+			default: throw new Error('Unknown action: ' + action.type);
+		}
+	}
+
 	private setCommits(): void {
 
 	}
 
+	// TODO: 必要？
 	private xyToIndex(x: number, y: number): number {
 		return x + (y * FIELD_WIDTH);
 	}
 
+	// TODO: 必要？
 	private indexToXy(index: number): [number, number] {
 		return [index % FIELD_WIDTH, Math.floor(index / FIELD_WIDTH)];
 	}
 
-	private lookupCard(card: Card): CardDef {
-		return this.cards.find(def => def.id === card.def)!;
+	private lookupCard(card: Card | Card['id']): CardDef {
+		if (typeof card === 'string') {
+			return this.cards.find(def => def.id === card)!;
+		} else {
+			return this.cards.find(def => def.id === card.def)!;
+		}
 	}
 
 	private commit(state: Partial<Store['_state']>) {
 		this.store.commit(state);
-	}
-
-	private pushLog(log: Log) {
-		this.lo
 	}
 
 	public getCardPos(card: Card): number | null {
@@ -176,23 +218,29 @@ export class Game {
 		return index > -1 ? index : null;
 	}
 
-	public draw(player: number): Card | null {
-		this.store.commit({ type: 'draw', payload: { player: player } });
+	public useSpell(card: Card) {
+		this.store.commit({ type: 'useSpell', payload: {
+			player: this.currentPlayer,
+			cardId: card.id,
+		}});
 	}
 
-	private applyDraw(state: State, payload: Record<string, any>): State {
-		const { player } = payload;
+	public applyUseSpell(state: State, action: Action): State {
+		const { player, cardId } = action.payload;
+		const card = state.players[player].hand.find(c => c.id === cardId)!;
+		const def = this.lookupCard(card);
 
-		const card = state.players[player].deck.pop();
-
-		if (card === undefined) {
-			state.winner = player === 0 ? 1 : 0;
-		} else {
-			state.players[player].hand.push(card);
+		// TODO: 対象カードがspellか判定必要?
+		// 仕組み的にspell以外のカードが来ることはないけど、型ガードのために必要かも
+		// (def as 〜).action で実行時のコストなしで型システムをすり抜けることはできそう
+		if (def.type !== 'spell') {
+			throw 'something happened';
 		}
 
-		return state;
+		def.action(new Context(this, card, state));
 	}
+
+	// TODO: currentStateを外部から参照できるように(?)
 
 	public start(): void {
 		const drew = this.draw(this.turn)!;
@@ -244,8 +292,3 @@ export class Game {
 		choices[choice].callback();
 	}
 }
-
-export type Context = {
-	game: Game;
-	thisCard: Card;
-};
