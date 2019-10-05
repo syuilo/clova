@@ -1,11 +1,11 @@
-type Place = {
+type Cell = {
 	type: 'empty';
 } | {
 	type: 'unit';
 	card: Card;
 };
 
-type Field = Place[];
+type Field = Cell[];
 
 type Log = {
 	player: number;
@@ -24,12 +24,14 @@ type CardDef = {
 	type: 'unit' | 'spell';
 	id: string;
 	cost: number;
+	setup: (ctx: Context) => void;
 };
 
 type Card = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
+	onBeforeDestroy: (() => void) | null | undefined;
 };
 
 export class Player {
@@ -170,16 +172,17 @@ export class Game {
 
 	public summon(card: Card, pos: number): void {
 		const def = this.lookupCard(card);
+
 		if (this.currentPlayer.energy < def.cost) {
 			throw new Error('no energy');
 		}
 
 		this.currentPlayer.energy -= def.cost;
 
-		let place = this.field[pos];
+		let cell = this.field[pos];
 
-		if (place.type === 'empty') {
-			place = {
+		if (cell.type === 'empty') {
+			cell = {
 				type: 'unit',
 				card: card
 			};
@@ -188,6 +191,18 @@ export class Game {
 				type: 'summon',
 				card: card.id
 			});
+			def.setup(this);
 		}
 	}
+
+	public showChoices(target: number, choices: { text: string; callback: () => void; }[]) {
+		// TODO
+		const choice = Math.floor(Math.random() * choices.length);
+		choices[choice].callback();
+	}
 }
+
+export type Context = {
+	game: Game;
+	thisCard: Card;
+};
