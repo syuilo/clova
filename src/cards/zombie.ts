@@ -5,8 +5,9 @@ import { Context } from '..';
 // という効果を持つカード
 
 export default {
-	name: 'Zombie',
 	id: '0bb8df78-2e97-443c-ac8a-78649aaa28cd',
+	name: 'Zombie',
+	type: 'unit',
 	hp: 500,
 	ap: 300,
 	cost: 3,
