@@ -11,7 +11,13 @@ export default {
 	ap: 300,
 	cost: 3,
 	setup: (ctx: Context) => {
+		const destoryedPosition: number | null = null;
+	
 		ctx.thisCard.onBeforeDestroy = () => {
+			destoryedPosition = ctx.thisCard.pos;
+		};
+
+		ctx.thisCard.onDestroyed = () => {
 			ctx.game.showChoices(ctx.thisCard.owner, [{
 				text: 'nope',
 				callback: () => {}
@@ -19,7 +25,7 @@ export default {
 				text: 'rebirth',
 				callback: () => {
 					ctx.game.damege(ctx.thisCard.owner, 500);
-					ctx.game.summon(ctx.thisCard, ctx.thisCard.owner);
+					ctx.game.summon(ctx.thisCard, destoryedPosition!);
 				}
 			}]);
 		};

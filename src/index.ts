@@ -32,6 +32,7 @@ type Card = {
 	id: string;
 	owner: number;
 	onBeforeDestroy: (() => void) | null | undefined;
+	onDestroyed: (() => void) | null | undefined;
 };
 
 export class Player {
@@ -173,11 +174,17 @@ export class Game {
 	public summon(card: Card, pos: number): void {
 		const def = this.lookupCard(card);
 
-		if (this.currentPlayer.energy < def.cost) {
+		if (this.players[card.owner].energy < def.cost) {
 			throw new Error('no energy');
 		}
 
-		this.currentPlayer.energy -= def.cost;
+		this.players[card.owner].energy -= def.cost;
+
+		this.setUnit(card, pos);
+	}
+
+	public setUnit(card: Card, pos: number): void {
+		const def = this.lookupCard(card);
 
 		let cell = this.field[pos];
 
@@ -191,7 +198,7 @@ export class Game {
 				type: 'summon',
 				card: card.id
 			});
-			def.setup(this);
+			def.setup({ game: this, thisCard: card });
 		}
 	}
 
