@@ -1,23 +1,23 @@
-type Transition<State, Operation> = (state: State, operation: Operation) => State;
+type Transition<State, Action> = (state: State, action: Action) => State;
 
-export class Store<State, Operation> {
+export class Store<State, Action> {
 	private initialState: State;
-	private operations: Operation[] = [];
-	private transition: Transition<State, Operation>;
+	private actions: Action[] = [];
+	private transition: Transition<State, Action>;
 	private currentState: State;
 
-	constructor(initialState: State, transition: Transition<State, Operation>) {
+	constructor(initialState: State, transition: Transition<State, Action>) {
 		this.initialState = initialState;
 		this.transition = transition;
 		this.currentState = initialState;
 	}
 
-	public commit(operation: Operation) {
-		this.operations.push(operation);
-		this.currentState = this.transition(this.currentState, operation);
+	public commit(action: Action) {
+		this.actions.push(action);
+		this.currentState = this.transition(this.currentState, action);
 	}
 
-	public commitAll(operations: Operation[]) {
-		for (const operation of operations) this.commit(operation);
+	public commitAll(actions: Action[]) {
+		for (const action of actions) this.commit(action);
 	}
 }
