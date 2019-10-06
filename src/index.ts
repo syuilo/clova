@@ -18,7 +18,7 @@ type Log = {
 	player: number;
 } & ({
 	type: 'beginTurn';
-	drew: Card['id'];
+	drawed: Card['id'];
 } | {
 	type: 'lose';
 	reason: 'noDeck';
@@ -67,45 +67,6 @@ type State = {
 	winner: number | null;
 };
 
-/*
-class Store {
-	private commits: Store['_state'][];
-
-	private _state: {
-		field: Field;
-		players: Player[];
-		turn: number;
-		winner: number | null;
-	};
-
-	constructor(state: Store['_state']) {
-		this._state = state;
-	}
-
-	public get state() {
-		return this._state;
-	}
-
-	public commit(state: Partial<Store['_state']>) {
-		const newState = {
-			...this._state,
-			...state
-		};
-
-		this.commits.push(newState);
-		this._state = newState;
-	}
-
-	public undo() {
-		// TODO
-	}
-
-	public redo() {
-		// TODO
-	}
-}
-*/
-
 export class Context {
 	public game: Game;
 	public thisCard: Card;
@@ -134,8 +95,10 @@ export class Context {
 		}
 	}
 
-	public showCardChoices() {
-		
+	public async showCardChoices(target: number, cards: Card[]) {
+		// TODO
+		const choice = Math.floor(Math.random() * cards.length);
+		return cards[choice];
 	}
 }
 
@@ -243,11 +206,11 @@ export class Game {
 	// TODO: currentStateを外部から参照できるように(?)
 
 	public start(): void {
-		const drew = this.draw(this.turn)!;
+		const drawed = this.draw(this.turn)!;
 		this.commit({
 			player: 0,
 			type: 'beginTurn',
-			drew: drew.id
+			drawed: drawed.id
 		});
 	}
 

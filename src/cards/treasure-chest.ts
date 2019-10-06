@@ -9,10 +9,12 @@ export default {
 	type: 'spell',
 	cost: 3,
 	action: async (ctx: Context) => {
-		const drew1 = ctx.draw(ctx.thisCard.owner);
-		const drew2 = ctx.draw(ctx.thisCard.owner);
+		const drawed1 = ctx.draw(ctx.thisCard.owner);
+		if (drawed1 === null) return;
+		const drawed2 = ctx.draw(ctx.thisCard.owner);
+		if (drawed2 === null) return;
 
-		const chosen = await ctx.showCardChoices(ctx.thisCard.owner, [drew1, drew2]);
+		const chosen = await ctx.showCardChoices(ctx.thisCard.owner, [drawed1, drawed2]);
 
 		ctx.game.dropHandCard(chosen);
 	}
