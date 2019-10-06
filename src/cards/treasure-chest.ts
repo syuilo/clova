@@ -14,7 +14,7 @@ export default {
 		const drawed2 = game.draw(thisCard.owner);
 		if (drawed2 === null) return;
 
-		const chosen = await game.cardChoices(thisCard.owner, [drawed1, drawed2]);
+		const chosen = await game.cardChoice(thisCard.owner, [drawed1, drawed2]);
 
 		game.dropHandCard(chosen);
 	}

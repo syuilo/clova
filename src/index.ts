@@ -1,5 +1,3 @@
-import { Repository } from './repository';
-
 type Cell = {
 	type: 'empty';
 } | {
@@ -49,6 +47,26 @@ type State = {
 	winner: number | null;
 };
 
+class Controller {
+	private logs: any[] = [];
+	private oldLogs: any[] = [];
+
+	constructor(oldLogs?: any[]) {
+		if (oldLogs) this.oldLogs = oldLogs;
+	}
+
+	public async requestAction(type: string, payload?: any) {
+		if (this.oldLogs.length > 0) {
+			const log = this.oldLogs.shift();
+			return log;
+		} else {
+			const res = await this.actions[type].do(payload);
+			this.logs.push(res);
+			return res;
+		}
+	}
+}
+
 export abstract class UI {
 	/**
 	 * UIに選択肢ダイアログなどを出す
@@ -58,10 +76,10 @@ export abstract class UI {
 
 export class Game {
 	private cards: CardDef[];
-	private repository: Repository;
+	private controller: Controller;
 	private state: State;
 
-	constructor(cards: Game['cards'], players: Player[]) {
+	constructor(cards: Game['cards'], players: Player[], controller: Controller) {
 		const empty = () => ({
 			type: 'empty' as const
 		});
@@ -79,7 +97,7 @@ export class Game {
 		};
 
 		this.cards = cards;
-		this.repository = new Repository();
+		this.controller = controller;
 	}
 
 	private get turn() {
@@ -92,15 +110,6 @@ export class Game {
 
 	private get currentPlayer(): Player {
 		return this.players[this.turn];
-	}
-
-	/**
-	 * コミットを与えてゲームの状態を復元
-	 */
-	private loadCommits(commits: Repository['commits']): void {
-		for (const commit of commits) {
-			this.repository.commit(commit);
-		}
 	}
 
 	// TODO: 必要？
@@ -147,22 +156,11 @@ export class Game {
 		}
 	}
 
-	public cardChoices(target: number, cards: Card[]) {
-		return new Promise((res) => {
-			// 次のコミットをlisten
-			this.repository.next = payload => {
-				res(cards.find(c => c.id === payload.cardId));
-			};
-	
-			// TODO
-			// const choice = this.ui.cardChoices(...);
-			const choice = Math.floor(Math.random() * cards.length);
-	
-			// TODO: typeは不要
-			this.repository.commit({
-				cardId: cards[choice].id,
-			});
-		});
+	public async cardChoice(target: number, cards: Card[]) {
+		// const choice = await this.controller.requestAction('cardChoice', ...);
+		const choice = Math.floor(Math.random() * cards.length);
+
+		return cards[choice];
 	}
 
 	private useSpell(card: Card | Card['id']) {
@@ -181,35 +179,29 @@ export class Game {
 	/**
 	 * Main phase
 	 */
-	public main() {
-		// 次のコミットをlisten
-		this.repository.next = action => {
-			switch (action.type) {
-				case 'summon':
-					// TODO
-					break;
-	
-				case 'useSpell':
-					this.useSpell(action.cardId);
-					break;
-	
-				case 'turnEnd':
-					// TODO
-					break;
-			
-				default:
-					break;
-			}
-
-			this.main();
-		};
-
+	public async main() {
 		// TODO
-		// const action = this.ui.requestAction(...);
+		// const action = await this.controller.requestAction('main', ...);
 		const action = { type: 'summon', cardId: 'foo' };
 
-		// TODO: typeは不要
-		this.repository.commit(action);
+		switch (action.type) {
+			case 'summon':
+				// TODO
+				break;
+
+			case 'useSpell':
+				this.useSpell(action.cardId);
+				break;
+
+			case 'turnEnd':
+				// TODO
+				break;
+		
+			default:
+				break;
+		}
+
+		this.main();
 	}
 
 	public summon(card: Card, pos: number): void {
