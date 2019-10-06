@@ -95,16 +95,22 @@ export class Context {
 		}
 	}
 
-	public async showCardChoices(target: number, cards: Card[]) {
-		// TODO
-		const choice = Math.floor(Math.random() * cards.length);
-
-		this.commit({ type: 'choiceCard', payload: {
-			player: this.currentPlayer,
-			cardId: cards[choice].id,
-		}});
-
-		return cards[choice];
+	public cardChoices(target: number, cards: Card[]) {
+		return new Promise((res) => {
+			// 次のコミットをlisten
+			next(payload => {
+				res(cards.find(c => c.id === payload.cardId));
+			});
+	
+			// TODO
+			// const choice = this.ui.cardChoices(...);
+			const choice = Math.floor(Math.random() * cards.length);
+	
+			this.commit({ type: 'choiceCard', payload: {
+				player: this.currentPlayer,
+				cardId: cards[choice].id,
+			}});
+		});
 	}
 }
 
