@@ -1,6 +1,4 @@
-import { Store } from './store';
-
-type Commit = Record<string, any>;
+import { Repository } from './repository';
 
 type Cell = {
 	type: 'empty';
@@ -10,19 +8,6 @@ type Cell = {
 };
 
 type Field = Cell[];
-
-type Log = {
-	player: number;
-} & ({
-	type: 'beginTurn';
-	drawed: Card['id'];
-} | {
-	type: 'lose';
-	reason: 'noDeck';
-} | {
-	type: 'summon';
-	card: Card['id'];
-});
 
 type CardDef = {
 	id: string;
@@ -73,8 +58,7 @@ export abstract class UI {
 
 export class Game {
 	private cards: CardDef[];
-	//private store: Store<State, Action>;
-	private commits: Commit[] = [];
+	private repository: Repository;
 	private state: State;
 
 	constructor(cards: Game['cards'], players: Player[]) {
@@ -95,6 +79,15 @@ export class Game {
 		};
 
 		this.cards = cards;
+		this.repository = new Repository();
+	}
+
+	private get turn() {
+		return this.state.turn;
+	}
+
+	private get players(): Player[] {
+		return this.state.players;
 	}
 
 	private get currentPlayer(): Player {
@@ -103,10 +96,6 @@ export class Game {
 
 	private setCommits(): void {
 
-	}
-
-	private commit(commit: Commit) {
-		this.commits.push(commit);
 	}
 
 	// TODO: 必要？
@@ -133,12 +122,7 @@ export class Game {
 	}
 
 	public start(): void {
-		const drawed = this.draw(this.turn)!;
-		this.commit({
-			player: 0,
-			type: 'beginTurn',
-			drawed: drawed.id
-		});
+		this.main();
 	}
 
 	public draw(player: number): Card | null {
@@ -161,16 +145,16 @@ export class Game {
 	public cardChoices(target: number, cards: Card[]) {
 		return new Promise((res) => {
 			// 次のコミットをlisten
-			next(payload => {
+			this.repository.next = payload => {
 				res(cards.find(c => c.id === payload.cardId));
-			});
+			};
 	
 			// TODO
 			// const choice = this.ui.cardChoices(...);
 			const choice = Math.floor(Math.random() * cards.length);
 	
 			// TODO: typeは不要
-			this.commit({
+			this.repository.commit({
 				cardId: cards[choice].id,
 			});
 		});
@@ -194,7 +178,7 @@ export class Game {
 	 */
 	public main() {
 		// 次のコミットをlisten
-		next(action => {
+		this.repository.next = action => {
 			switch (action.type) {
 				case 'summon':
 					// TODO
@@ -213,14 +197,14 @@ export class Game {
 			}
 
 			this.main();
-		});
+		};
 
 		// TODO
 		// const action = this.ui.requestAction(...);
 		const action = { type: 'summon', cardId: 'foo' };
 
 		// TODO: typeは不要
-		this.commit(action);
+		this.repository.commit(action);
 	}
 
 	public summon(card: Card, pos: number): void {

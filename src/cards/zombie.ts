@@ -1,4 +1,4 @@
-import { Context } from '..';
+import { Game, Card } from '..';
 
 // 「このカードが破壊されるとき、カードの持ち主に選択肢A「何もしにゃい」と選択肢B「復活」を提示し、
 // Aを選ぶと何もせず、Bを選ぶとダメージ500を受ける代わりにこのカードを復活させる」
@@ -11,7 +11,7 @@ export default {
 	hp: 500,
 	ap: 300,
 	cost: 3,
-	setup: (ctx: Context) => {
+	setup: (game: Game, thisCard: Card) => {
 		let destroyedPosition: number | null = null;
 	
 		ctx.thisCard.onBeforeDestroy = () => {
