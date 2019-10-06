@@ -1,9 +1,6 @@
 import { Store } from './store';
 
-type Action = {
-	type: string;
-	payload: Record<string, any>;
-};
+type Commit = Record<string, any>;
 
 type Cell = {
 	type: 'empty';
@@ -33,13 +30,13 @@ type CardDef = {
 	cost: number;
 } & ({
 	type: 'unit';
-	setup: (ctx: Context) => void;
+	setup: (game: Game, thisCard: Card) => void;
 } | {
 	type: 'spell';
-	action: (ctx: Context) => void;
+	action: (game: Game, thisCard: Card) => void;
 });
 
-type Card = {
+export type Card = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
@@ -67,19 +64,85 @@ type State = {
 	winner: number | null;
 };
 
-export class Context {
-	public game: Game;
-	public thisCard: Card;
+export abstract class UI {
+	/**
+	 * UIに選択肢ダイアログなどを出す
+	 */
+	public abstract choices(choices: string[]);
+}
+
+export class Game {
+	private cards: CardDef[];
+	//private store: Store<State, Action>;
+	private commits: Commit[] = [];
 	private state: State;
 
-	constructor(game: Context['game'], thisCard: Context['thisCard'], state: Context['state']) {
-		this.game = game;
-		this.thisCard = thisCard;
-		this.state = state;
+	constructor(cards: Game['cards'], players: Player[]) {
+		const empty = () => ({
+			type: 'empty' as const
+		});
+
+		this.state = {
+			players: players,
+			field: [
+				empty(), empty(), empty(),
+				empty(), empty(), empty(),
+				empty(), empty(), empty(),
+				empty(), empty(), empty(),
+			],
+			turn: 0,
+			winner: null
+		};
+
+		this.cards = cards;
+	}
+
+	private get currentPlayer(): Player {
+		return this.players[this.turn];
+	}
+
+	private setCommits(): void {
+
+	}
+
+	private commit(commit: Commit) {
+		this.commits.push(commit);
+	}
+
+	// TODO: 必要？
+	private xyToIndex(x: number, y: number): number {
+		return x + (y * FIELD_WIDTH);
+	}
+
+	// TODO: 必要？
+	private indexToXy(index: number): [number, number] {
+		return [index % FIELD_WIDTH, Math.floor(index / FIELD_WIDTH)];
+	}
+
+	private lookupCard(card: Card | Card['id']): CardDef {
+		if (typeof card === 'string') {
+			return this.cards.find(def => def.id === card)!;
+		} else {
+			return this.cards.find(def => def.id === card.def)!;
+		}
+	}
+
+	public getCardPos(card: Card): number | null {
+		const index = this.field.findIndex(cell => cell.type === 'unit' && cell.card.id === card.id);
+		return index > -1 ? index : null;
+	}
+
+	public start(): void {
+		const drawed = this.draw(this.turn)!;
+		this.commit({
+			player: 0,
+			type: 'beginTurn',
+			drawed: drawed.id
+		});
 	}
 
 	public draw(player: number): Card | null {
-		const deck = this.game.players[player].deck;
+		const deck = this.players[player].deck;
 	
 		// デッキの一番上にあるカードを取得
 		const card = deck[0];
@@ -106,103 +169,14 @@ export class Context {
 			// const choice = this.ui.cardChoices(...);
 			const choice = Math.floor(Math.random() * cards.length);
 	
-			this.commit({ type: 'choiceCard', payload: {
-				player: this.currentPlayer,
+			// TODO: typeは不要
+			this.commit({
 				cardId: cards[choice].id,
-			}});
+			});
 		});
 	}
-}
 
-export class Game {
-	private cards: CardDef[];
-	private store: Store<State, Action>;
-
-	constructor(cards: Game['cards'], players: Game['players']) {
-		const empty = () => ({
-			type: 'empty' as const
-		});
-
-		this.store = new Store<State, Action>({
-			players: players,
-			field: [
-				empty(), empty(), empty(),
-				empty(), empty(), empty(),
-				empty(), empty(), empty(),
-				empty(), empty(), empty(),
-			],
-			turn: 0,
-			winner: null
-		}, this.applyAction);
-
-		this.cards = cards;
-	}
-
-	public get players() {
-		return this.store.state.players;
-	}
-
-	private get turn() {
-		return this.store.state.turn;
-	}
-
-	private get field() {
-		return this.store.state.field;
-	}
-
-	private get currentPlayer(): Player {
-		return this.players[this.turn];
-	}
-
-	private applyAction(state: State, action: Action): State {
-		state = JSON.parse(JSON.stringify(state)); // copy
-		switch (action.type) {
-			case 'useSpell': return this.applyUseSpell(state, action.payload);
-			default: throw new Error('Unknown action: ' + action.type);
-		}
-	}
-
-	private setCommits(): void {
-
-	}
-
-	// TODO: 必要？
-	private xyToIndex(x: number, y: number): number {
-		return x + (y * FIELD_WIDTH);
-	}
-
-	// TODO: 必要？
-	private indexToXy(index: number): [number, number] {
-		return [index % FIELD_WIDTH, Math.floor(index / FIELD_WIDTH)];
-	}
-
-	private lookupCard(card: Card | Card['id']): CardDef {
-		if (typeof card === 'string') {
-			return this.cards.find(def => def.id === card)!;
-		} else {
-			return this.cards.find(def => def.id === card.def)!;
-		}
-	}
-
-	private commit(state: Partial<Store['_state']>) {
-		this.store.commit(state);
-	}
-
-	public getCardPos(card: Card): number | null {
-		const index = this.field.findIndex(cell => cell.type === 'unit' && cell.card.id === card.id);
-		return index > -1 ? index : null;
-	}
-
-	public useSpell(card: Card) {
-		this.store.commit({ type: 'useSpell', payload: {
-			player: this.currentPlayer,
-			cardId: card.id,
-		}});
-	}
-
-	public applyUseSpell(state: State, action: Action): State {
-		const { player, cardId } = action.payload;
-		const card = state.players[player].hand.find(c => c.id === cardId)!;
+	private useSpell(card: Card | Card['id']) {
 		const def = this.lookupCard(card);
 
 		// TODO: 対象カードがspellか判定必要?
@@ -212,22 +186,41 @@ export class Game {
 			throw 'something happened';
 		}
 
-		def.action(new Context(this, card, state));
+		def.action(this, card);
 	}
 
-	// TODO: currentStateを外部から参照できるように(?)
+	/**
+	 * Main phase
+	 */
+	public main() {
+		// 次のコミットをlisten
+		next(action => {
+			switch (action.type) {
+				case 'summon':
+					// TODO
+					break;
+	
+				case 'useSpell':
+					this.useSpell(action.cardId);
+					break;
+	
+				case 'turnEnd':
+					// TODO
+					break;
+			
+				default:
+					break;
+			}
 
-	public start(): void {
-		const drawed = this.draw(this.turn)!;
-		this.commit({
-			player: 0,
-			type: 'beginTurn',
-			drawed: drawed.id
+			this.main();
 		});
-	}
 
-	public turnEnd() {
+		// TODO
+		// const action = this.ui.requestAction(...);
+		const action = { type: 'summon', cardId: 'foo' };
 
+		// TODO: typeは不要
+		this.commit(action);
 	}
 
 	public summon(card: Card, pos: number): void {
@@ -259,11 +252,5 @@ export class Game {
 			});
 			def.setup({ game: this, thisCard: card });
 		}
-	}
-
-	public showChoices(target: number, choices: { text: string; callback: () => void; }[]) {
-		// TODO
-		const choice = Math.floor(Math.random() * choices.length);
-		choices[choice].callback();
 	}
 }

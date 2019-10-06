@@ -1,4 +1,4 @@
-import { Context } from '..';
+import { Game, Card } from '..';
 
 // 「カードを2枚ドローし、そのどちらかを捨てる」
 // という効果を持つスペルカード
@@ -8,14 +8,14 @@ export default {
 	name: 'Treasure Chest',
 	type: 'spell',
 	cost: 3,
-	action: async (ctx: Context) => {
-		const drawed1 = ctx.draw(ctx.thisCard.owner);
+	action: async (game: Game, thisCard: Card) => {
+		const drawed1 = game.draw(thisCard.owner);
 		if (drawed1 === null) return;
-		const drawed2 = ctx.draw(ctx.thisCard.owner);
+		const drawed2 = game.draw(thisCard.owner);
 		if (drawed2 === null) return;
 
-		const chosen = await ctx.cardChoices(ctx.thisCard.owner, [drawed1, drawed2]);
+		const chosen = await game.cardChoices(thisCard.owner, [drawed1, drawed2]);
 
-		ctx.game.dropHandCard(chosen);
+		game.dropHandCard(chosen);
 	}
 };
