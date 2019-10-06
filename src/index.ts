@@ -94,8 +94,13 @@ export class Game {
 		return this.players[this.turn];
 	}
 
-	private setCommits(): void {
-
+	/**
+	 * コミットを与えてゲームの状態を復元
+	 */
+	private loadCommits(commits: Repository['commits']): void {
+		for (const commit of commits) {
+			this.repository.commit(commit);
+		}
 	}
 
 	// TODO: 必要？
