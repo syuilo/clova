@@ -1,6 +1,6 @@
 type Commit = Record<string, any>;
 
-type CommitHandler = (Commit) => void;
+type CommitHandler = (commit: Commit) => void;
 
 export class Repository {
 	private commits: Commit[] = [];
