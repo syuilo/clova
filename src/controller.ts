@@ -1,7 +1,7 @@
 import { Card } from '.';
 
 export type Actions = {
-	choiceRedrawCards: (cards: Card[]) => Card['id'] | null;
+	choiceRedrawCards: (cards: Card[]) => Card['id'][];
 	mainPhase: () => { type: string; };
 	cardChoice: (payload: any) => Card['id'];
 };
