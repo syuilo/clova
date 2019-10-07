@@ -117,8 +117,15 @@ export class Game {
 		return index > -1 ? index : null;
 	}
 
-	public start(): void {
-		this.main();
+	public async start(): void {
+		const player1Cards = shuffle(this.players[0].deck).slice(0, 5);
+		const player2Cards = shuffle(this.players[1].deck).slice(0, 5);
+
+		const action = await this.controller.requestAction('choiceRedrawCards', [player1Cards, player2Cards]);
+
+		// TODO: actionで指定されたIDのカードを引き直す
+
+		this.mainPhase();
 	}
 
 	public draw(player: number): Card | null {
@@ -159,8 +166,8 @@ export class Game {
 	/**
 	 * Main phase
 	 */
-	public async main() {
-		const action = await this.controller.requestAction('main');
+	private async mainPhase() {
+		const action = await this.controller.requestAction('mainPhase');
 
 		switch (action.type) {
 			case 'summon':
@@ -179,7 +186,7 @@ export class Game {
 				break;
 		}
 
-		this.main();
+		this.mainPhase();
 	}
 
 	public summon(card: Card, pos: number): void {

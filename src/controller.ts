@@ -1,7 +1,7 @@
 import { Card } from '.';
 
 type Actions = {
-	main: () => { type: string; };
+	mainPhase: () => { type: string; };
 	cardChoice: (payload: any) => Card['id'];
 };
 
