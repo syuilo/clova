@@ -1,3 +1,5 @@
+import { Controller } from './controller';
+
 type Cell = {
 	type: 'empty';
 } | {
@@ -46,26 +48,6 @@ type State = {
 	turn: number;
 	winner: number | null;
 };
-
-class Controller {
-	private logs: any[] = [];
-	private oldLogs: any[] = [];
-
-	constructor(oldLogs?: any[]) {
-		if (oldLogs) this.oldLogs = oldLogs;
-	}
-
-	public async requestAction(type: string, payload?: any) {
-		if (this.oldLogs.length > 0) {
-			const log = this.oldLogs.shift();
-			return log;
-		} else {
-			const res = await this.actions[type].do(payload);
-			this.logs.push(res);
-			return res;
-		}
-	}
-}
 
 export abstract class UI {
 	/**
@@ -157,9 +139,7 @@ export class Game {
 	}
 
 	public async cardChoice(target: number, cards: Card[]) {
-		// const choice = await this.controller.requestAction('cardChoice', ...);
-		const choice = Math.floor(Math.random() * cards.length);
-
+		const choice = await this.controller.requestAction('cardChoice', cards);
 		return cards[choice];
 	}
 
@@ -180,9 +160,7 @@ export class Game {
 	 * Main phase
 	 */
 	public async main() {
-		// TODO
-		// const action = await this.controller.requestAction('main', ...);
-		const action = { type: 'summon', cardId: 'foo' };
+		const action = await this.controller.requestAction('main');
 
 		switch (action.type) {
 			case 'summon':
