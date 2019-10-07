@@ -121,7 +121,10 @@ export class Game {
 		const player1Cards = shuffle(this.players[0].deck).slice(0, 5);
 		const player2Cards = shuffle(this.players[1].deck).slice(0, 5);
 
-		const action = await this.controller.requestAction('choiceRedrawCards', [player1Cards, player2Cards]);
+		const [player1redraw, player2redraw] = await Promise.all([
+			this.controller.requestAction(0, 'choiceRedrawCards', player1Cards),
+			this.controller.requestAction(1, 'choiceRedrawCards', player2Cards)
+		]);
 
 		// TODO: actionで指定されたIDのカードを引き直す
 

@@ -1,10 +1,14 @@
 import { Game, Player } from '.';
-import { Controller } from './controller';
+import { Controller, Actions } from './controller';
 
 const playerA = new Player([]);
 const playerB = new Player([]);
 
-const controller = new Controller({
+const player1Actions: Actions = {
+	choiceRedrawCards: (cards) => {
+		return window.prompt('REDRAW');
+	},
+
 	mainPhase: () => {
 		const act = window.prompt('MAIN');
 		if (act == null) return { type: 'turnEnd' };
@@ -16,7 +20,9 @@ const controller = new Controller({
 				break;
 		}
 	}
-});
+};
+
+const controller = new Controller([player1Actions, player2Actions]);
 
 const game = new Game([], [playerA, playerB]);
 

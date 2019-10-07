@@ -1,27 +1,39 @@
 import { Card } from '.';
 
-type Actions = {
+export type Actions = {
+	choiceRedrawCards: (cards: Card[]) => Card['id'] | null;
 	mainPhase: () => { type: string; };
 	cardChoice: (payload: any) => Card['id'];
 };
 
-export class Controller {
-	private actions: Actions;
-	private logs: any[] = [];
-	private oldLogs: any[] = [];
+type Log = {
+	date?: Date;
+	player: number;
+	payload: any;
+};
 
-	constructor(actions: Actions, oldLogs?: any[]) {
+export class Controller {
+	private actions: Actions[];
+	private logs: Log[] = [];
+	private oldLogs: Log[] = [];
+
+	constructor(actions: Actions[], oldLogs?: Log[]) {
 		this.actions = actions;
 		if (oldLogs) this.oldLogs = oldLogs;
 	}
 
-	public async requestAction(type: string, payload?: any) {
-		if (this.oldLogs.length > 0) {
-			const log = this.oldLogs.shift();
+	public async requestAction(player: number, type: string, payload?: any) {
+		const log = this.oldLogs.find(l => l.player === player);
+		if (log) {
+			this.oldLogs = this.oldLogs.filter(l => l !== log);
 			return log;
 		} else {
-			const res = await this.actions[type](payload);
-			this.logs.push(res);
+			const res = await this.actions[player][type](payload);
+			this.logs.push({
+				date: new Date(),
+				player: player,
+				payload: res
+			});
 			return res;
 		}
 	}
