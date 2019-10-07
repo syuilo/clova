@@ -1,6 +1,6 @@
 import { Card } from '.';
 
-export type Actions = {
+export type ActionSupplier = {
 	choiceRedrawCards: (cards: Card[]) => Card['id'][];
 	mainPhase: () => { type: string; };
 	cardChoice: (payload: any) => Card['id'];
@@ -13,29 +13,32 @@ type Log = {
 };
 
 export class Controller {
-	private actions: Actions[];
+	private actionSuppliers: ActionSupplier[];
 	private logs: Log[] = [];
-	private oldLogs: Log[] = [];
+	private queue: Log[] = [];
 
-	constructor(actions: Actions[], oldLogs?: Log[]) {
-		this.actions = actions;
-		if (oldLogs) this.oldLogs = oldLogs;
+	constructor(actionSuppliers: ActionSupplier[]) {
+		this.actionSuppliers = actionSuppliers;
 	}
 
-	public async requestAction(player: number, type: string, payload?: any) {
-		const log = this.oldLogs.find(l => l.player === player);
-		if (log) {
-			this.oldLogs = this.oldLogs.filter(l => l !== log);
-			this.logs.push(log);
-			return log.payload;
-		} else {
-			const res = await this.actions[player][type](payload);
-			this.logs.push({
+	public supplyAction(action: Log): void {
+		this.logs.push(action);
+		this.queue.push(action);
+	}
+
+	public async consumeAction(player: number, type: string, payload?: any): Promise<Log['payload']> {
+		if (this.queue.length === 0) {
+			const action = await this.actionSuppliers[player][type](payload);
+			this.supplyAction({
 				date: new Date(),
 				player: player,
-				payload: res
+				payload: action
 			});
-			return res;
 		}
+		return this.queue.shift()!.payload;
+	} 
+
+	public getLogs(): Log[] {
+		return this.logs;
 	}
 }

@@ -122,8 +122,8 @@ export class Game {
 		const player2Cards = shuffle(this.players[1].deck).slice(0, 5);
 
 		const [player1redraw, player2redraw] = await Promise.all([
-			this.controller.requestAction(0, 'choiceRedrawCards', player1Cards),
-			this.controller.requestAction(1, 'choiceRedrawCards', player2Cards)
+			this.controller.consumeAction(0, 'choiceRedrawCards', player1Cards),
+			this.controller.consumeAction(1, 'choiceRedrawCards', player2Cards)
 		]);
 
 		// TODO: actionで指定されたIDのカードを引き直す
@@ -149,7 +149,7 @@ export class Game {
 	}
 
 	public async cardChoice(target: number, cards: Card[]) {
-		const choice = await this.controller.requestAction('cardChoice', cards);
+		const choice = await this.controller.consumeAction('cardChoice', cards);
 		return cards[choice];
 	}
 
@@ -170,7 +170,7 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
-		const action = await this.controller.requestAction('mainPhase');
+		const action = await this.controller.consumeAction('mainPhase');
 
 		switch (action.type) {
 			case 'summon':
