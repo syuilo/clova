@@ -26,7 +26,8 @@ export class Controller {
 		const log = this.oldLogs.find(l => l.player === player);
 		if (log) {
 			this.oldLogs = this.oldLogs.filter(l => l !== log);
-			return log;
+			this.logs.push(log);
+			return log.payload;
 		} else {
 			const res = await this.actions[player][type](payload);
 			this.logs.push({
