@@ -126,6 +126,8 @@ export default Vue.extend({
 				this.$root.new(XRedrawDialog, {
 					game: this.game,
 					cards: cards
+				}).$on('chosen', cards => {
+					res(cards.map(card => card.id));
 				});
 			});
 		}

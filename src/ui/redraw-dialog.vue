@@ -44,7 +44,7 @@ export default Vue.extend({
 		},
 
 		ok() {
-
+			this.$emit('chosen', this.redraw);
 		}
 	}
 });
