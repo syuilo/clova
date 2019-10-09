@@ -2,25 +2,30 @@
 	"name": "clova",
 	"main": "./built/index.js",
 	"scripts": {
-		"start": "node ./built",
-		"build": "webpack",
-		"watch": "webpack --watch"
+		"start": "node ./built/server",
+		"build-server": "tsc --p server-tsconfig.json",
+		"watch-server": "tsc --p server-tsconfig.json -w",
+		"build-client": "webpack",
+		"watch-client": "webpack --watch",
+		"build": "npm run build-server && npm run build-client"
 	},
 	"dependencies": {
-		"css-loader": "3.2.0",
-		"stylus": "0.54.7",
-		"stylus-loader": "3.0.2",
-		"ts-loader": "6.2.0",
+		"@types/ws": "6.0.3",
 		"vue": "2.6.10",
-		"vue-loader": "15.7.1",
-		"vue-style-loader": "4.1.2",
-		"vue-template-compiler": "2.6.10",
-		"webpack": "4.41.0"
+		"ws": "7.1.2"
 	},
 	"devDependencies": {
 		"@types/node": "12.7.11",
 		"ts-node": "8.4.1",
 		"typescript": "3.6.3",
-		"webpack-cli": "3.3.9"
+		"webpack-cli": "3.3.9",
+		"vue-loader": "15.7.1",
+		"vue-style-loader": "4.1.2",
+		"vue-template-compiler": "2.6.10",
+		"webpack": "4.41.0",
+		"css-loader": "3.2.0",
+		"stylus": "0.54.7",
+		"stylus-loader": "3.0.2",
+		"ts-loader": "6.2.0"
 	}
 }

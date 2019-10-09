@@ -29,8 +29,8 @@ export type Card = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
-	onBeforeDestroy: (() => void) | null | undefined;
-	onDestroyed: (() => void) | null | undefined;
+	onBeforeDestroy?: (() => void) | null | undefined;
+	onDestroyed?: (() => void) | null | undefined;
 };
 
 export class Player {
@@ -90,6 +90,10 @@ export class Game {
 		return this.players[this.turn];
 	}
 
+	public getState() {
+		return this.state;
+	}
+
 	// TODO: 必要？
 	private xyToIndex(x: number, y: number): number {
 		return x + (y * FIELD_WIDTH);
@@ -122,8 +126,8 @@ export class Game {
 		const player2Cards = this.shuffle(this.players[1].deck).slice(0, 5);
 
 		const [player1redraw, player2redraw] = await Promise.all([
-			this.controller.consumeAction(0, 'choiceRedrawCards', player1Cards),
-			this.controller.consumeAction(1, 'choiceRedrawCards', player2Cards)
+			this.controller.output(0, 'choiceRedrawCards', player1Cards),
+			this.controller.output(1, 'choiceRedrawCards', player2Cards)
 		]);
 
 		// TODO: actionで指定されたIDのカードを引き直す
@@ -149,7 +153,7 @@ export class Game {
 	}
 
 	public async cardChoice(target: number, cards: Card[]) {
-		const choice = await this.controller.consumeAction('cardChoice', cards);
+		const choice = await this.controller.output('cardChoice', cards);
 		return cards[choice];
 	}
 
@@ -170,7 +174,7 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
-		const action = await this.controller.consumeAction('mainPhase');
+		const action = await this.controller.output('mainPhase');
 
 		switch (action.type) {
 			case 'summon':

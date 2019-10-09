@@ -13,31 +13,39 @@ type Log = {
 };
 
 export class Controller {
-	private actionSuppliers: ActionSupplier[];
+	private inputRequest?: (player: number, type: string, payload: any) => void;
 	private logs: Log[] = [];
 	private queue: Log[] = [];
+	private onInput: (((log: Log) => void) | null)[] = [];
 
-	constructor(actionSuppliers: ActionSupplier[]) {
-		this.actionSuppliers = actionSuppliers;
+	constructor(inputRequest?: Controller['inputRequest']) {
+		this.inputRequest = inputRequest;
 	}
 
-	public supplyAction(action: Log): void {
-		console.log('<- ACTION RECIVED', action.player, action.payload);
+	public input(action: Log): void {
+		console.log('<- INPUT', action.player, action.payload);
 		this.logs.push(action);
 		this.queue.push(action);
+		if (this.onInput[action.player]) this.onInput[action.player]!(action);
 	}
 
-	public async consumeAction(player: number, type: string, payload?: any): Promise<Log['payload']> {
-		console.log('-> ACTION REQUESTED', player, type, payload);
-		if (this.queue.length === 0) {
-			const action = await this.actionSuppliers[player][type](payload);
-			this.supplyAction({
-				date: new Date(),
-				player: player,
-				payload: action
-			});
-		}
-		return this.queue.shift()!.payload;
+	public output(player: number, type: string, payload?: any): Promise<Log['payload']> {
+		return new Promise(res => {
+			if (this.queue.filter(log => log.player === player).length === 0) {
+				this.onInput[player] = log => {
+					console.log('<- OUTPUT', player, type, log.payload);
+					this.onInput[player] = null;
+					res(log.payload);
+				};
+				console.log('-> WAITING INPUT...', player, type, payload);
+				if (this.inputRequest) this.inputRequest(player, type, payload);
+			} else {
+				const log = this.queue.find(log => log.player === player);
+				this.queue = this.queue.filter(_log => _log !== log);
+				console.log('<- OUTPUT', player, type, log!.payload);
+				res(log!.payload);
+			}
+		});
 	} 
 
 	public getLogs(): Log[] {
