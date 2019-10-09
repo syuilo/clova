@@ -174,7 +174,7 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
-		const action = await this.controller.output('mainPhase');
+		const action = await this.controller.output(this.turn, 'mainPhase');
 
 		switch (action.type) {
 			case 'summon':
