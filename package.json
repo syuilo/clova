@@ -3,12 +3,24 @@
 	"main": "./built/index.js",
 	"scripts": {
 		"start": "node ./built",
-		"build": "tsc"
+		"build": "webpack",
+		"watch": "webpack --watch"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"css-loader": "3.2.0",
+		"stylus": "0.54.7",
+		"stylus-loader": "3.0.2",
+		"ts-loader": "6.2.0",
+		"vue": "2.6.10",
+		"vue-loader": "15.7.1",
+		"vue-style-loader": "4.1.2",
+		"vue-template-compiler": "2.6.10",
+		"webpack": "4.41.0"
+	},
 	"devDependencies": {
 		"@types/node": "12.7.11",
 		"ts-node": "8.4.1",
-		"typescript": "3.6.3"
+		"typescript": "3.6.3",
+		"webpack-cli": "3.3.9"
 	}
 }

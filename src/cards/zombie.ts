@@ -1,4 +1,4 @@
-import { Game, Card } from '..';
+import { Game, Card } from '../engine';
 
 // 「このカードが破壊されるとき、カードの持ち主に選択肢A「何もしにゃい」と選択肢B「復活」を提示し、
 // Aを選ぶと何もせず、Bを選ぶとダメージ500を受ける代わりにこのカードを復活させる」
@@ -7,9 +7,8 @@ import { Game, Card } from '..';
 export default {
 	id: '0bb8df78-2e97-443c-ac8a-78649aaa28cd',
 	name: 'Zombie',
-	type: 'unit',
-	hp: 500,
-	ap: 300,
+	type: 'unit' as const,
+	power: 500,
 	cost: 3,
 	setup: (game: Game, thisCard: Card) => {
 		let destroyedPosition: number | null = null;

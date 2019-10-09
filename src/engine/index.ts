@@ -7,7 +7,11 @@ type Cell = {
 	card: Card;
 };
 
-type Field = Cell[];
+type Field = {
+	back1: [Cell, Cell, Cell];
+	front: [Cell, Cell, Cell, Cell];
+	back2: [Cell, Cell, Cell];
+};
 
 type CardDef = {
 	id: string;
@@ -49,13 +53,6 @@ type State = {
 	winner: number | null;
 };
 
-export abstract class UI {
-	/**
-	 * UIに選択肢ダイアログなどを出す
-	 */
-	public abstract choices(choices: string[]);
-}
-
 export class Game {
 	private cards: CardDef[];
 	private controller: Controller;
@@ -68,12 +65,11 @@ export class Game {
 
 		this.state = {
 			players: players,
-			field: [
-				empty(), empty(), empty(),
-				empty(), empty(), empty(),
-				empty(), empty(), empty(),
-				empty(), empty(), empty(),
-			],
+			field: {
+				back1: [empty(), empty(), empty()],
+				front: [empty(), empty(), empty(), empty()],
+				back2: [empty(), empty(), empty()],
+			},
 			turn: 0,
 			winner: null
 		};
@@ -104,7 +100,7 @@ export class Game {
 		return [index % FIELD_WIDTH, Math.floor(index / FIELD_WIDTH)];
 	}
 
-	private lookupCard(card: Card | Card['id']): CardDef {
+	public lookupCard(card: Card | Card['id']): CardDef {
 		if (typeof card === 'string') {
 			return this.cards.find(def => def.id === card)!;
 		} else {
@@ -117,9 +113,13 @@ export class Game {
 		return index > -1 ? index : null;
 	}
 
+	private shuffle(cards: Card[]): Card[] {
+		return cards; // TODO
+	}
+
 	public async start(): void {
-		const player1Cards = shuffle(this.players[0].deck).slice(0, 5);
-		const player2Cards = shuffle(this.players[1].deck).slice(0, 5);
+		const player1Cards = this.shuffle(this.players[0].deck).slice(0, 5);
+		const player2Cards = this.shuffle(this.players[1].deck).slice(0, 5);
 
 		const [player1redraw, player2redraw] = await Promise.all([
 			this.controller.consumeAction(0, 'choiceRedrawCards', player1Cards),

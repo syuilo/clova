@@ -22,11 +22,13 @@ export class Controller {
 	}
 
 	public supplyAction(action: Log): void {
+		console.log('<- ACTION RECIVED', action.player, action.payload);
 		this.logs.push(action);
 		this.queue.push(action);
 	}
 
 	public async consumeAction(player: number, type: string, payload?: any): Promise<Log['payload']> {
+		console.log('-> ACTION REQUESTED', player, type, payload);
 		if (this.queue.length === 0) {
 			const action = await this.actionSuppliers[player][type](payload);
 			this.supplyAction({

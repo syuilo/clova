@@ -1,4 +1,4 @@
-import { Game, Card } from '..';
+import { Game, Card } from '../engine';
 
 // 「カードを2枚ドローし、そのどちらかを捨てる」
 // という効果を持つスペルカード
@@ -6,7 +6,7 @@ import { Game, Card } from '..';
 export default {
 	id: 'a629c01a-4520-4bc6-b1a5-f8d7ecd52eac',
 	name: 'Treasure Chest',
-	type: 'spell',
+	type: 'spell' as const,
 	cost: 3,
 	action: async (game: Game, thisCard: Card) => {
 		const drawed1 = game.draw(thisCard.owner);
