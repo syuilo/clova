@@ -32,6 +32,7 @@ import { CARDS } from '../cards';
 import { Game, Player } from '../engine';
 import { Controller, ActionSupplier } from '../engine/controller';
 import TreasureChest from '../cards/treasure-chest';
+import slime from '../cards/slime';
 
 export default Vue.extend({
 	components: {
@@ -86,7 +87,7 @@ export default Vue.extend({
 		socket.addEventListener('open', event => {
 			const myDeck = [];
 			for (let i = 0; i < 40; i++) {
-				myDeck.push(TreasureChest.id);
+				myDeck.push(slime.id);
 			}
 
 			socket.send(JSON.stringify({
@@ -120,11 +121,12 @@ export default Vue.extend({
 	methods: {
 		choiceRedrawCards(cards) {
 			return new Promise((res) => {
-				this.$root.new(XRedrawDialog, {
+				const vm = this.$root.new(XRedrawDialog, {
 					game: this.game,
 					cards: cards
 				}).$on('chosen', cards => {
 					res(cards.map(card => card.id));
+					vm.$el.parentNode.removeChild(vm.$el);
 				});
 			});
 		},
