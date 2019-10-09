@@ -30,7 +30,7 @@ import XCard from './card.vue';
 import XRedrawDialog from './redraw-dialog.vue';
 import { CARDS } from '../cards';
 import { Game, Player } from '../engine';
-import { Controller, ActionSupplier } from '../engine/controller';
+import { ClientController, ActionSupplier } from '../engine/controller';
 import TreasureChest from '../cards/treasure-chest';
 import slime from '../cards/slime';
 
@@ -67,7 +67,7 @@ export default Vue.extend({
 		const room = window.prompt('Room', 'testRoom');
 		const socket = new WebSocket(`ws://localhost:3000/?name=${name}&room=${room}`);
 
-		const controller = new Controller(async (player, type, payload) => {
+		const controller = new ClientController(async (player, type, payload) => {
 			if (player !== myPlayerNumber) return;
 
 			let res = null;

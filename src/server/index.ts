@@ -1,7 +1,7 @@
 import * as WebSocket from 'ws';
 import { Game, Player, Card } from '../engine/index';
 import { CARDS } from '../cards';
-import { Controller, ActionSupplier } from '../engine/controller';
+import { ServerController } from '../engine/controller';
 
 type Room = {
 	game: Game;
@@ -39,7 +39,7 @@ function createGame(player1Deck: string[], player2Deck: string[]): [Game, (playe
 	const player1 = new Player(player1DeckWithId);
 	const player2 = new Player(player2DeckWithId);
 
-	const controller = new Controller();
+	const controller = new ServerController();
 
 	const pushAction = (player: number, payload: any) => {
 		const action = {
@@ -48,7 +48,7 @@ function createGame(player1Deck: string[], player2Deck: string[]): [Game, (playe
 			payload: payload,
 		};
 
-		controller.input(action);
+		if (!controller.input(action)) throw new Error('invalid input');
 
 		return action;
 	};
