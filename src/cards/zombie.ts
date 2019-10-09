@@ -1,4 +1,4 @@
-import { Game, Card } from '../engine';
+import { Game, Card } from '../server/engine';
 
 // 「このカードが破壊されるとき、カードの持ち主に選択肢A「何もしにゃい」と選択肢B「復活」を提示し、
 // Aを選ぶと何もせず、Bを選ぶとダメージ500を受ける代わりにこのカードを復活させる」

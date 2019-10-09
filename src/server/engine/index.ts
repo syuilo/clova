@@ -56,7 +56,7 @@ type State = {
 
 export class Game {
 	private cards: CardDef[];
-	private controller: Controller;
+	public controller: Controller;
 	private state: State;
 	private rng: seedrandom.prng;
 
@@ -95,6 +95,16 @@ export class Game {
 
 	public getState() {
 		return this.state;
+	}
+
+	public getStateForClient(player: number) {
+		return {
+			opponentHandCount: this.players[player === 0 ? 1 : 0].hand.length,
+			opponentDeckCount: this.players[player === 0 ? 1 : 0].deck.length,
+			myHand: this.players[player].hand,
+			myDeck: this.players[player].deck,
+			field: this.state.field
+		};
 	}
 
 	// TODO: 必要？

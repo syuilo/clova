@@ -1,11 +1,12 @@
 <template>
 <div class="card" @click="$emit('click')">
-	<header>{{ game.lookupCard(card).name }}</header>
+	<header>{{ def.name }}</header>
 </div>
 </template>
 
 <script>
 import Vue from 'vue';
+import { CARDS } from '../cards';
 
 export default Vue.extend({
 	props: {
@@ -17,6 +18,12 @@ export default Vue.extend({
 			type: Object,
 			required: true
 		},
+	},
+
+	data() {
+		return {
+			def: CARDS.find(x => x.id === this.card.def)
+		};
 	},
 });
 </script>

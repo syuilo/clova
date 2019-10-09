@@ -1,4 +1,4 @@
-import { Game, Card } from '../engine';
+import { Game, Card } from '../server/engine';
 
 export default {
 	id: 'df24c430-cd3b-4a39-99e2-222154b98f27',

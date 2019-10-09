@@ -1,4 +1,4 @@
-import { Game, Card } from '../engine';
+import { Game, Card } from '../server/engine';
 
 // 「カードを2枚ドローし、そのどちらかを捨てる」
 // という効果を持つスペルカード

@@ -18,8 +18,8 @@
 			<div></div>
 		</div>
 	</div>
-	<div id="hand">
-		<x-card v-for="card in hand" :key="card.id" :card="card" :game="game"/>
+	<div id="hand" v-if="game">
+		<x-card v-for="card in game.myHand" :key="card.id" :card="card" :game="game"/>
 	</div>
 </div>
 </template>
@@ -29,10 +29,12 @@ import Vue from 'vue';
 import XCard from './card.vue';
 import XRedrawDialog from './redraw-dialog.vue';
 import { CARDS } from '../cards';
-import { Game, Player } from '../engine';
-import { ClientController, ActionSupplier } from '../engine/controller';
 import TreasureChest from '../cards/treasure-chest';
 import slime from '../cards/slime';
+
+type Game = {
+
+};
 
 export default Vue.extend({
 	components: {
@@ -47,42 +49,12 @@ export default Vue.extend({
 		};
 	},
 
-	provide() {
-		return {
-			game: this.game
-		};
-	},
-
-	computed: {
-		hand(): any[] {
-			if (this.game == null) return [];
-			return this.game.players[this.myPlayerNumber].hand;
-		}
-	},
-
 	created() {
 		const actions = [];
 
 		const name = window.prompt('Your name', Math.random().toString());
 		const room = window.prompt('Room', 'testRoom');
 		const socket = new WebSocket(`ws://localhost:3000/?name=${name}&room=${room}`);
-
-		const controller = new ClientController(async (player, type, payload) => {
-			if (player !== this.myPlayerNumber) return;
-
-			let res = null;
-
-			if (type === 'choiceRedrawCards') {
-				res = await this.choiceRedrawCards(payload);
-			} else if (type === 'mainPhase') {
-				res = await this.mainPhase();
-			}
-
-			socket.send(JSON.stringify({
-				type: 'action',
-				payload: res
-			}));
-		});
 
 		socket.addEventListener('open', event => {
 			const myDeck = [];
@@ -98,22 +70,33 @@ export default Vue.extend({
 			}));
 		});
 
-		socket.addEventListener('message', event => {
+		socket.addEventListener('message', async event => {
 			const message = JSON.parse(event.data);
 			console.log(message.type, message.payload);
 
 			if (message.type === 'game') {
-				const gameState = message.payload.game as ReturnType<Game['getState']>;
+				this.game = message.payload.game;
 				this.myPlayerNumber = message.payload.player1 === name ? 0 : 1;
-
-				const player1 = new Player(gameState.players[0].deck);
-				const player2 = new Player(gameState.players[1].deck);
-				
-				this.game = new Game(CARDS, [player1, player2], controller);
-
-				this.game.start();
+				socket.send(JSON.stringify({
+					type: 'ready',
+				}));
 			} else if (message.type === 'action') {
-				controller.input(message.payload);
+				this.game = message.payload.game;
+			} else if (message.type === 'actionRequest') {
+				const { type, payload } = message.payload;
+
+				let res = null;
+
+				if (type === 'choiceRedrawCards') {
+					res = await this.choiceRedrawCards(payload);
+				} else if (type === 'mainPhase') {
+					res = await this.mainPhase();
+				}
+
+				socket.send(JSON.stringify({
+					type: 'action',
+					payload: res
+				}));
 			}
 		});
 	},

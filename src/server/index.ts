@@ -1,13 +1,14 @@
 import * as WebSocket from 'ws';
-import { Game, Player, Card } from '../engine/index';
+import { Game, Player, Card } from './engine/index';
 import { CARDS } from '../cards';
-import { ServerController } from '../engine/controller';
+import { Controller } from './engine/controller';
 
 type Room = {
 	game: Game;
-	pushAction: (player: number, payload: any) => void,
 	player1: string;
 	player2: string;
+	player1ready: boolean;
+	player2ready: boolean;
 	player1ws: WebSocket;
 	player2ws: WebSocket;
 };
@@ -21,7 +22,7 @@ const wss = new WebSocket.Server({
 const rooms: Record<string, Room> = {};
 const matchings: Record<string, { name: string; deck: string[]; ws: WebSocket }> = {};
 
-function createGame(player1Deck: string[], player2Deck: string[]): [Game, (player: number, payload: any) => void] {
+function createGame(player1Deck: string[], player2Deck: string[], player1ws: WebSocket, player2ws: WebSocket): Game {
 	let i = 0;
 
 	const player1DeckWithId: Card[] = [];
@@ -39,23 +40,19 @@ function createGame(player1Deck: string[], player2Deck: string[]): [Game, (playe
 	const player1 = new Player(player1DeckWithId);
 	const player2 = new Player(player2DeckWithId);
 
-	const controller = new ServerController();
+	const controller = new Controller((player, type, payload) => {
+		(player === 0 ? player1ws : player2ws).send(JSON.stringify({
+			type: 'actionRequest',
+			payload: {
+				type: type,
+				payload: payload
+			}
+		}));
+	});
 
-	const pushAction = (player: number, payload: any) => {
-		const action = {
-			date: new Date(),
-			player: player,
-			payload: payload,
-		};
+	const game = new Game(CARDS, [player1, player2], controller, 'seed');
 
-		if (!controller.input(action)) throw new Error('invalid input');
-
-		return action;
-	};
-
-	const game = new Game(CARDS, [player1, player2], controller);
-
-	return [game, pushAction];
+	return game;
 }
 
 wss.on('connection', (ws, req) => {
@@ -72,30 +69,31 @@ wss.on('connection', (ws, req) => {
 		if (msg.type === 'enter') {
 			if (rooms[roomName]) {
 				ws.send(JSON.stringify({ type: 'game', payload: {
-					game: rooms[roomName].game.getState(),
+					game: rooms[roomName].game.getStateForClient(rooms[roomName].player1 === name ? 0 : 1),
 					player1: rooms[roomName].player1
 				}}));
 			} else if (matchings[roomName]) {
-				const [game, pushAction] = createGame(matchings[roomName].deck, msg.payload.deck);
-
-				game.start();
+				const game = createGame(matchings[roomName].deck, msg.payload.deck, matchings[roomName].ws, ws);
 
 				rooms[roomName] = {
 					game: game,
-					pushAction: pushAction,
 					player1: matchings[roomName].name,
 					player2: name,
 					player1ws: matchings[roomName].ws,
-					player2ws: ws
+					player2ws: ws,
+					player1ready: false,
+					player2ready: false
 				};
 
-				const res = JSON.stringify({ type: 'game', payload: {
-					game: rooms[roomName].game.getState(),
+				matchings[roomName].ws.send(JSON.stringify({ type: 'game', payload: {
+					game: rooms[roomName].game.getStateForClient(0),
 					player1: rooms[roomName].player1
-				}});
+				}}));
 
-				matchings[roomName].ws.send(res);
-				ws.send(res);
+				ws.send(JSON.stringify({ type: 'game', payload: {
+					game: rooms[roomName].game.getStateForClient(1),
+					player1: rooms[roomName].player1
+				}}));
 			} else {
 				matchings[roomName] = {
 					name: name,
@@ -103,11 +101,30 @@ wss.on('connection', (ws, req) => {
 					ws: ws
 				};
 			}
+		} else if (msg.type === 'ready') {
+			if (rooms[roomName].player1 === name) {
+				rooms[roomName].player1ready = true;
+			} else {
+				rooms[roomName].player2ready = true;
+			}
+			if (rooms[roomName].player1ready && rooms[roomName].player2ready) {
+				rooms[roomName].game.start();
+			}
 		} else if (msg.type === 'action') {
-			const payload = rooms[roomName].pushAction(rooms[roomName].player1 === name ? 0 : 1, msg.payload);
-			const res = JSON.stringify({ type: 'action', payload: payload });
-			rooms[roomName].player1ws.send(res);
-			rooms[roomName].player2ws.send(res);
+			const action = {
+				date: new Date(),
+				player: rooms[roomName].player1 === name ? 0 : 1,
+				payload: msg.payload,
+			};
+	
+			if (!rooms[roomName].game.controller.input(action)) throw new Error('invalid input');
+	
+			rooms[roomName].player1ws.send(JSON.stringify({ type: 'action', payload: {
+				game: rooms[roomName].game.getStateForClient(0),
+			}}));
+			rooms[roomName].player2ws.send(JSON.stringify({ type: 'action', payload: {
+				game: rooms[roomName].game.getStateForClient(1),
+			}}));
 		}
 	});
 });
