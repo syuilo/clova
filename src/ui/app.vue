@@ -1,25 +1,30 @@
 <template>
 <div id="game">
-	<div id="field">
-		<div id="back2">
-			<div></div>
-			<div></div>
-			<div></div>
+	<div>
+		<div id="opponent-hand" v-if="game">
+			<div v-for="i in game.opponentHandCount" :key="i"></div>
 		</div>
-		<div id="front">
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
+		<div id="field">
+			<div id="back2">
+				<div></div>
+				<div></div>
+				<div></div>
+			</div>
+			<div id="front">
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+			</div>
+			<div id="back1">
+				<div></div>
+				<div></div>
+				<div></div>
+			</div>
 		</div>
-		<div id="back1">
-			<div></div>
-			<div></div>
-			<div></div>
+		<div id="hand" v-if="game">
+			<x-card v-for="(card, i) in game.myHand" :key="card.id" :card="card" :game="game" :style="{ transform: `translateZ(${i * 4}px)` }"/>
 		</div>
-	</div>
-	<div id="hand" v-if="game">
-		<x-card v-for="card in game.myHand" :key="card.id" :card="card" :game="game"/>
 	</div>
 </div>
 </template>
@@ -124,11 +129,36 @@ export default Vue.extend({
 
 <style lang="stylus" scoped>
 #game
-	perspective 600px
+	perspective 2000px
+	transform-style preserve-3d
+
+	> div
+		perspective 2000px
+		transform-style preserve-3d
+		transform rotateX(50deg)
+
+#opponent-hand
+	text-align center
+	perspective 2000px
+	transform rotateX(-50deg)
+
+	> div
+		display inline-block
+		width 120px
+		height 165px
+		border solid 2px #777
+		border-radius 8px
+
+#hand
+	perspective 2000px
+	transform rotateX(-50deg)
+	text-align center
+
+	> *
+		position relative
+		margin 0 -8px
 
 #field
-	transform rotateX(30deg)
-
 	> div
 		text-align center
 
@@ -139,4 +169,5 @@ export default Vue.extend({
 			margin 8px
 			border solid 2px #b7b7b7
 			border-radius 8px
+			backdrop-filter blur(4px)
 </style>

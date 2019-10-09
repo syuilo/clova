@@ -35,6 +35,7 @@ export default Vue.extend({
 	height 165px
 	border solid 2px #777
 	border-radius 8px
+	background #fff
 
 	> *
 		pointer-events none
