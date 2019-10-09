@@ -19,7 +19,7 @@
 		</div>
 	</div>
 	<div id="hand">
-		<x-card v-for="card in hand" :key="card.id" :card="card"/>
+		<x-card v-for="card in hand" :key="card.id" :card="card" :game="game"/>
 	</div>
 </div>
 </template>
@@ -42,6 +42,8 @@ export default Vue.extend({
 	data() {
 		return {
 			game: null as Game | null,
+			myPlayerNumber: null as null | number,
+			isMyMainPhase: false
 		};
 	},
 
@@ -54,21 +56,19 @@ export default Vue.extend({
 	computed: {
 		hand(): any[] {
 			if (this.game == null) return [];
-			return this.game.players[0].hand;
+			return this.game.players[this.myPlayerNumber].hand;
 		}
 	},
 
 	created() {
-		let myPlayerNumber: null | number = null;
-
 		const actions = [];
 
-		const name = window.prompt('Your name');
+		const name = window.prompt('Your name', Math.random().toString());
 		const room = window.prompt('Room', 'testRoom');
 		const socket = new WebSocket(`ws://localhost:3000/?name=${name}&room=${room}`);
 
 		const controller = new ClientController(async (player, type, payload) => {
-			if (player !== myPlayerNumber) return;
+			if (player !== this.myPlayerNumber) return;
 
 			let res = null;
 
@@ -104,7 +104,7 @@ export default Vue.extend({
 
 			if (message.type === 'game') {
 				const gameState = message.payload.game as ReturnType<Game['getState']>;
-				myPlayerNumber = message.payload.player1 === name ? 0 : 1;
+				this.myPlayerNumber = message.payload.player1 === name ? 0 : 1;
 
 				const player1 = new Player(gameState.players[0].deck);
 				const player2 = new Player(gameState.players[1].deck);
@@ -132,15 +132,8 @@ export default Vue.extend({
 		},
 
 		mainPhase() {
-			const act = window.prompt('MAIN');
-			if (act == null) return { type: 'turnEnd' };
-
-			switch (act.split(' ')[0]) {
-				case 'summon': return { type: 'summon',  };
-
-				default:
-					break;
-			}
+			this.isMyMainPhase = true;
+			console.log(this.game);
 		}
 	}
 });

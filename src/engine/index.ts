@@ -1,4 +1,5 @@
 import { Controller } from './controller';
+import * as seedrandom from 'seedrandom';
 
 type Cell = {
 	type: 'empty';
@@ -57,8 +58,9 @@ export class Game {
 	private cards: CardDef[];
 	private controller: Controller;
 	private state: State;
+	private rng: seedrandom.prng;
 
-	constructor(cards: Game['cards'], players: Player[], controller: Controller) {
+	constructor(cards: Game['cards'], players: Player[], controller: Controller, seed: any) {
 		const empty = () => ({
 			type: 'empty' as const
 		});
@@ -76,6 +78,7 @@ export class Game {
 
 		this.cards = cards;
 		this.controller = controller;
+		this.rng = seedrandom(seed);
 	}
 
 	private get turn() {
@@ -117,20 +120,55 @@ export class Game {
 		return index > -1 ? index : null;
 	}
 
+	private random() {
+		return this.rng();
+	}
+
 	private shuffle(cards: Card[]): Card[] {
+		let m = cards.length;
+		while (m) {
+			const i = Math.floor(this.random() * m--);
+			[cards[m], cards[i]] = [cards[i], cards[m]];
+		}
+		return cards;
+	}
+
+	private randomPick(cards: Card[]): Card {
 		return cards; // TODO
 	}
 
-	public async start(): void {
-		const player1Cards = this.shuffle(this.players[0].deck).slice(0, 5);
-		const player2Cards = this.shuffle(this.players[1].deck).slice(0, 5);
+	public async start() {
+		const deck1 = this.shuffle(this.players[0].deck);
+		const deck2 = this.shuffle(this.players[1].deck);
+
+		let player1Cards = [deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!];
+		let player2Cards = [deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!];
 
 		const [player1redraw, player2redraw] = await Promise.all([
 			this.controller.output(0, 'choiceRedrawCards', player1Cards),
 			this.controller.output(1, 'choiceRedrawCards', player2Cards)
 		]);
 
-		// TODO: actionで指定されたIDのカードを引き直す
+		for (const id of player1redraw) {
+			deck1.push(player1Cards.find(x => x.id === id)!);
+			player1Cards = player1Cards.filter(x => x.id !== id);
+		}
+		this.shuffle(deck1);
+		for (let i = 0; i < player1redraw.length; i++) {
+			player1Cards.push(deck1.shift()!);
+		}
+
+		for (const id of player2redraw) {
+			deck2.push(player2Cards.find(x => x.id === id)!);
+			player2Cards = player2Cards.filter(x => x.id !== id);
+		}
+		this.shuffle(deck2);
+		for (let i = 0; i < player2redraw.length; i++) {
+			player2Cards.push(deck2.shift()!);
+		}
+
+		this.players[0].hand = player1Cards;
+		this.players[1].hand = player2Cards;
 
 		this.mainPhase();
 	}

@@ -10,12 +10,14 @@
 		"build": "npm run build-server && npm run build-client"
 	},
 	"dependencies": {
-		"@types/ws": "6.0.3",
+		"seedrandom": "3.0.5",
 		"vue": "2.6.10",
 		"ws": "7.1.2"
 	},
 	"devDependencies": {
 		"@types/node": "12.7.11",
+		"@types/seedrandom": "2.4.28",
+		"@types/ws": "6.0.3",
 		"ts-node": "8.4.1",
 		"typescript": "3.6.3",
 		"webpack-cli": "3.3.9",
