@@ -211,7 +211,7 @@ export default Vue.extend({
 
 	> *
 		position relative
-		margin 0 -8px
+		//margin 0 -8px
 
 		&.selected
 			box-shadow 0 0 8px #0f0

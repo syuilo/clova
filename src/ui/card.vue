@@ -1,7 +1,9 @@
 <template>
-<div class="card" @click="$emit('click')">
+<div class="card" @click="$emit('click')" :class="def.type">
 	<header>{{ def.name }}</header>
 	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
+	<div class="cost">{{ def.cost }}</div>
+	<div class="power" v-if="def.type === 'unit'">{{ def.power }}</div>
 </div>
 </template>
 
@@ -37,21 +39,44 @@ export default Vue.extend({
 	border solid 2px #777
 	border-radius 8px
 	background #fff
+	overflow hidden
+
+	&.unit
+		border-radius 32px 32px 8px 8px
 
 	> *
 		pointer-events none
 		user-select none
 
 	> header
-		font-size 12px
+		font-size 10px
 		line-height 20px
 		border-bottom solid 1px #eee
 
 	> .image
+		margin-top 8px
 		height 100px
 		width 100%
 		background-size contain
 		background-position center center
 		background-repeat no-repeat
+
+	> .cost
+		position absolute
+		bottom 0
+		right 0
+		border-top solid 2px #777
+		border-left solid 2px #777
+		border-radius 8px 0 0 0
+		padding 0 4px
+
+	> .power
+		position absolute
+		bottom 0
+		left 0
+		border-top solid 2px #777
+		border-right solid 2px #777
+		border-radius 0 8px 0 0
+		padding 0 4px
 
 </style>
