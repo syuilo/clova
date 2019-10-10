@@ -1,7 +1,7 @@
 import * as WebSocket from 'ws';
-import { Game, Player, Card } from './engine/index';
+import { Game, Player, Card } from '../engine/index';
 import { CARDS } from '../cards';
-import { Controller } from './engine/controller';
+import { Controller } from '../engine/controller';
 
 type Room = {
 	game: Game;

@@ -1,6 +1,7 @@
 <template>
 <div class="card" @click="$emit('click')">
 	<header>{{ def.name }}</header>
+	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
 </div>
 </template>
 
@@ -42,7 +43,15 @@ export default Vue.extend({
 		user-select none
 
 	> header
-		font-size 14px
+		font-size 12px
+		line-height 20px
 		border-bottom solid 1px #eee
+
+	> .image
+		height 100px
+		width 100%
+		background-size contain
+		background-position center center
+		background-repeat no-repeat
 
 </style>

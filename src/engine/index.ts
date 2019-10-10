@@ -225,20 +225,21 @@ export class Game {
 		const action = await this.controller.output(this.turn, 'mainPhase');
 
 		switch (action.type) {
-			case 'summon':
-				// TODO
-				break;
-
-			case 'useSpell':
-				this.useSpell(action.cardId);
+			case 'play':
+				const cardId = action.payload;
+				const cardDef = this.lookupCard(cardId);
+				if (cardDef.type === 'unit') {
+					this.summon(cardId);
+				} else if (cardDef.type === 'spell') {
+					this.useSpell(cardId);
+				}
 				break;
 
 			case 'turnEnd':
 				// TODO
 				break;
 		
-			default:
-				break;
+			default: throw new Error('Unknown main phase action: ' + action.type);
 		}
 
 		this.mainPhase();

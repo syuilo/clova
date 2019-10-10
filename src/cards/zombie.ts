@@ -1,4 +1,4 @@
-import { Game, Card } from '../server/engine';
+import { Game, Card } from '../engine';
 
 // 「このカードが破壊されるとき、カードの持ち主に選択肢A「何もしにゃい」と選択肢B「復活」を提示し、
 // Aを選ぶと何もせず、Bを選ぶとダメージ500を受ける代わりにこのカードを復活させる」
@@ -6,7 +6,8 @@ import { Game, Card } from '../server/engine';
 
 export default {
 	id: '0bb8df78-2e97-443c-ac8a-78649aaa28cd',
-	name: 'Zombie',
+	name: 'ゾンビ',
+	image: 'https://1.bp.blogspot.com/-f8ltztd6QEs/WUJGwkjY85I/AAAAAAABEzs/2a4OD0OvHQklr6HQAAa209LVBLWxJc1gQCLcBGAs/s400/fantasy_zombie_man.png',
 	type: 'unit' as const,
 	power: 500,
 	cost: 3,

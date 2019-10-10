@@ -23,7 +23,7 @@
 			</div>
 		</div>
 		<div id="hand" v-if="game">
-			<x-card v-for="(card, i) in game.myHand" :key="card.id" :card="card" :game="game" :style="{ transform: `translateZ(${i * 4}px)` }"/>
+			<x-card v-for="(card, i) in game.myHand" :key="card.id" :card="card" :game="game" :style="{ transform: `translateZ(${i * 4}px)` }" @click="play(card)"/>
 		</div>
 	</div>
 </div>
@@ -122,6 +122,15 @@ export default Vue.extend({
 		mainPhase() {
 			this.isMyMainPhase = true;
 			console.log(this.game);
+			return new Promise(res => {
+				this.$once('play', payload => {
+					res({ type: 'play', payload });
+				});
+			});
+		},
+
+		play(card) {
+			this.$emit('play', card.id);
 		}
 	}
 });
@@ -170,4 +179,10 @@ export default Vue.extend({
 			border solid 2px #b7b7b7
 			border-radius 8px
 			backdrop-filter blur(4px)
+
+		&#back1 > div
+			border-color #a4c5d8
+
+		&#back2 > div
+			border-color #d8a4ae
 </style>
