@@ -50,7 +50,7 @@ function createGame(player1Deck: string[], player2Deck: string[], player1ws: Web
 		}));
 	});
 
-	return new Game(CARDS, [player1, player2], controller, 'seed');
+	return new Game(CARDS, player1, player2, controller, 'seed');
 }
 
 wss.on('connection', (ws, req) => {

@@ -1,5 +1,6 @@
 import { Controller } from './controller';
 import * as seedrandom from 'seedrandom';
+import { Repository } from './repository';
 
 type Cell = {
 	type: 'empty';
@@ -44,12 +45,10 @@ export class Player {
 	}
 }
 
-const FIELD_WIDTH = 3;
-const FIELD_HEIGHT = 4;
-
 type State = {
 	field: Field;
-	players: Player[];
+	player1: Player;
+	player2: Player;
 	turn: number;
 	winner: number | null;
 };
@@ -57,16 +56,18 @@ type State = {
 export class Game {
 	private cards: CardDef[];
 	public controller: Controller;
-	private state: State;
+	private repository: Repository<State>;
+	private seed: string;
 	private rng: seedrandom.prng;
 
-	constructor(cards: Game['cards'], players: Player[], controller: Controller, seed: any) {
+	constructor(cards: Game['cards'], player1: Player, player2: Player, controller: Controller, seed: any) {
 		const empty = () => ({
 			type: 'empty' as const
 		});
 
-		this.state = {
-			players: players,
+		this.repository = new Repository({
+			player1: player1,
+			player2: player2,
 			field: {
 				back1: [empty(), empty(), empty()],
 				front: [empty(), empty(), empty(), empty()],
@@ -74,51 +75,27 @@ export class Game {
 			},
 			turn: 0,
 			winner: null
-		};
+		});
 
 		this.cards = cards;
 		this.controller = controller;
 		this.rng = seedrandom(seed);
+		this.seed = seed;
 	}
 
-	private get turn() {
-		return this.state.turn;
-	}
-
-	private get players(): Player[] {
-		return this.state.players;
-	}
-
-	private get currentPlayer(): Player {
-		return this.players[this.turn];
-	}
-
-	private get field() {
-		return this.state.field;
-	}
-
-	public getState() {
-		return this.state;
+	private q(player: number, type: string, payload: any, callback: (v: any, state: State, rng: seedrandom.prng) => Partial<State>) {
+		return this.controller.q(this.repository, this.seed, player, type, payload, callback);
 	}
 
 	public getStateForClient(player: number) {
+		const state = this.repository.getState();
 		return {
-			opponentHandCount: this.players[player === 0 ? 1 : 0].hand.length,
-			opponentDeckCount: this.players[player === 0 ? 1 : 0].deck.length,
-			myHand: this.players[player].hand,
-			myDeck: this.players[player].deck,
-			field: this.state.field
+			opponentHandCount: player === 0 ? state.player2.hand.length : state.player1.hand.length,
+			opponentDeckCount: player === 0 ? state.player2.deck.length : state.player1.deck.length,
+			myHand: player === 0 ? state.player1.hand : state.player2.hand,
+			myDeck: player === 0 ? state.player1.deck : state.player2.deck,
+			field: state.field
 		};
-	}
-
-	// TODO: 必要？
-	private xyToIndex(x: number, y: number): number {
-		return x + (y * FIELD_WIDTH);
-	}
-
-	// TODO: 必要？
-	private indexToXy(index: number): [number, number] {
-		return [index % FIELD_WIDTH, Math.floor(index / FIELD_WIDTH)];
 	}
 
 	public lookupCard(card: Card | Card['id']): CardDef {
@@ -134,14 +111,10 @@ export class Game {
 		return index > -1 ? index : null;
 	}
 
-	private random() {
-		return this.rng();
-	}
-
-	private shuffle(cards: Card[]): Card[] {
+	private shuffle(cards: Card[], rng: seedrandom.prng): Card[] {
 		let m = cards.length;
 		while (m) {
-			const i = Math.floor(this.random() * m--);
+			const i = Math.floor(rng() * m--);
 			[cards[m], cards[i]] = [cards[i], cards[m]];
 		}
 		return cards;
@@ -152,36 +125,44 @@ export class Game {
 	}
 
 	public async start() {
-		const deck1 = this.shuffle(this.players[0].deck);
-		const deck2 = this.shuffle(this.players[1].deck);
+		const state = this.repository.getState();
+
+		const deck1 = this.shuffle(state.player1.deck, this.rng);
+		const deck2 = this.shuffle(state.player2.deck, this.rng);
 
 		let player1Cards = [deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!];
 		let player2Cards = [deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!];
 
 		await Promise.all([
-			this.controller.q(0, 'choiceRedrawCards', player1Cards, player1redraw => {
+			this.q(0, 'choiceRedrawCards', player1Cards, (player1redraw, state, rng) => {
 				// TODO: validate param
 				for (const id of player1redraw) {
 					deck1.push(player1Cards.find(x => x.id === id)!);
 					player1Cards = player1Cards.filter(x => x.id !== id);
 				}
-				this.shuffle(deck1);
+				this.shuffle(deck1, rng);
 				for (let i = 0; i < player1redraw.length; i++) {
 					player1Cards.push(deck1.shift()!);
 				}
-				this.players[0].hand = player1Cards;
+				state.player1.hand = player1Cards;
+				return {
+					player1: state.player1
+				};
 			}),
-			this.controller.q(1, 'choiceRedrawCards', player2Cards, player2redraw => {
+			this.q(1, 'choiceRedrawCards', player2Cards, (player2redraw, state, rng) => {
 				// TODO: validate param
 				for (const id of player2redraw) {
 					deck2.push(player2Cards.find(x => x.id === id)!);
 					player2Cards = player2Cards.filter(x => x.id !== id);
 				}
-				this.shuffle(deck2);
+				this.shuffle(deck2, rng);
 				for (let i = 0; i < player2redraw.length; i++) {
 					player2Cards.push(deck2.shift()!);
 				}
-				this.players[1].hand = player2Cards;
+				state.player2.hand = player2Cards;
+				return {
+					player2: state.player2
+				};
 			})
 		]);
 
@@ -223,36 +204,43 @@ export class Game {
 		def.action(this, card);
 	}
 
+	private get turn() {
+		const state = this.repository.getState();
+		return state.turn;
+	}
+
 	/**
 	 * Main phase
 	 */
 	private async mainPhase() {
-		await this.controller.q(this.turn, 'mainPhase', null, action => {
+		await this.q(this.turn, 'mainPhase', null, (action, state) => {
+			const player = state.turn === 0 ? state.player1 : state.player2;
 			switch (action.type) {
 				case 'play':
 					const cardId = action.payload.card;
-					const card = this.currentPlayer.hand.find(c => c.id === cardId);
+					const card = player.hand.find(c => c.id === cardId);
 					if (card == null) throw new Error('no such card');
 					const cardDef = this.lookupCard(card);
 					if (cardDef.type === 'unit') {
-						this.summon(card, action.payload.index);
+						this.summon(state, card, action.payload.index);
 					} else if (cardDef.type === 'spell') {
 						this.useSpell(cardId);
 					}
-					break;
+					return state;
 	
-				case 'turnEnd':
-					// TODO
-					break;
+				case 'turnEnd': return {
+					...state,
+					turn: state.turn === 0 ? 1 : 0
+				};
 			
 				default: throw new Error('Unknown main phase action: ' + action.type);
 			}
-	
-			this.mainPhase();
 		});
+
+		this.mainPhase();
 	}
 
-	public summon(card: Card, index: number): void {
+	public summon(state: State, card: Card, index: number): State {
 		const def = this.lookupCard(card);
 /*
 		if (this.players[card.owner].energy < def.cost) {
@@ -261,19 +249,20 @@ export class Game {
 
 		this.players[card.owner].energy -= def.cost;
 */
-		this.setUnit(card, this.turn === 0 ? 'back1' : 'back2', index);
+		return this.setUnit(state, card, this.turn === 0 ? 'back1' : 'back2', index);
 	}
 
-	public setUnit(card: Card, section: keyof Game['state']['field'], index: number): void {
+	public setUnit(state: State, card: Card, section: keyof State['field'], index: number): State {
 		const def = this.lookupCard(card);
 
-		if (this.field[section][index].type === 'empty') {
-			this.field[section][index] = {
+		if (state.field[section][index].type === 'empty') {
+			state.field[section][index] = {
 				type: 'unit',
 				card: card
 			};
-			console.log(this.field);
 			//def.setup({ game: this, thisCard: card });
 		}
+
+		return state;
 	}
 }
