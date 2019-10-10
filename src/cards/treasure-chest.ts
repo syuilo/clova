@@ -10,11 +10,13 @@ export default {
 	type: 'spell' as const,
 	cost: 3,
 	action: (state, thisCard, api, end) => {
-		const drawed1 = api.draw(thisCard.owner);
-		const drawed2 = api.draw(thisCard.owner);
+		const drawed1 = state.draw(thisCard.owner);
+		if (drawed1 == null) return state;
+		const drawed2 = state.draw(thisCard.owner);
+		if (drawed2 == null) return state;
 
 		api.cardChoice(thisCard.owner, [drawed1, drawed2], chosen => {
-			api.dropHandCard(chosen);
+			state.dropHandCard(chosen);
 			end();
 		});
 
