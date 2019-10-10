@@ -1,4 +1,4 @@
-import { Game, Card } from '../engine';
+import { CardDef } from '../engine';
 
 export default {
 	id: 'df24c430-cd3b-4a39-99e2-222154b98f27',
@@ -7,6 +7,6 @@ export default {
 	type: 'unit' as const,
 	power: 100,
 	cost: 1,
-	setup: (game: Game, thisCard: Card) => {
+	setup: async (game, thisCard) => {
 	}
-};
+} as CardDef;

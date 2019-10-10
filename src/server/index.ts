@@ -40,17 +40,29 @@ function createGame(player1Deck: string[], player2Deck: string[], player1ws: Web
 	const player1 = new Player(player1DeckWithId);
 	const player2 = new Player(player2DeckWithId);
 
+	let game: Game;
+
 	const controller = new Controller((player, type, payload) => {
 		(player === 0 ? player1ws : player2ws).send(JSON.stringify({
 			type: 'q',
 			payload: {
 				type: type,
-				payload: payload
+				payload: payload,
+				game: game.getStateForClient(player)
+			}
+		}));
+
+		(player === 0 ? player2ws : player1ws).send(JSON.stringify({
+			type: 'info',
+			payload: {
+				game: game.getStateForClient(player === 0 ? 1 : 0)
 			}
 		}));
 	});
 
-	return new Game(CARDS, player1, player2, controller, 'seed');
+	game = new Game(CARDS, player1, player2, controller, 'seed');
+
+	return game;
 }
 
 wss.on('connection', (ws, req) => {
@@ -115,14 +127,7 @@ wss.on('connection', (ws, req) => {
 				payload: msg.payload,
 			};
 	
-			if (!await rooms[roomName].game.controller.input(action)) throw new Error('invalid input');
-	
-			rooms[roomName].player1ws.send(JSON.stringify({ type: 'action', payload: {
-				game: rooms[roomName].game.getStateForClient(0),
-			}}));
-			rooms[roomName].player2ws.send(JSON.stringify({ type: 'action', payload: {
-				game: rooms[roomName].game.getStateForClient(1),
-			}}));
+			rooms[roomName].game.controller.input(action);
 		}
 	});
 });

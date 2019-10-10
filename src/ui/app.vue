@@ -31,6 +31,7 @@
 				:class="{ selected: selectedHandCard === card.id }"/>
 		</div>
 	</div>
+	<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
 </div>
 </template>
 
@@ -38,9 +39,16 @@
 import Vue from 'vue';
 import XCard from './card.vue';
 import XRedrawDialog from './redraw-dialog.vue';
+import XCardChoiceDialog from './card-choice-dialog.vue';
 import { CARDS } from '../cards';
 import TreasureChest from '../cards/treasure-chest';
 import slime from '../cards/slime';
+import golem from '../cards/golem';
+import treasureChest from '../cards/treasure-chest';
+import dragon from '../cards/dragon';
+import witch from '../cards/witch';
+import energyDrink from '../cards/energy-drink';
+import { Card } from '../engine';
 
 type Game = {
 
@@ -68,10 +76,14 @@ export default Vue.extend({
 		const socket = new WebSocket(`ws://localhost:3000/?name=${name}&room=${room}`);
 
 		socket.addEventListener('open', event => {
-			const myDeck = [];
-			for (let i = 0; i < 40; i++) {
-				myDeck.push(slime.id);
-			}
+			const myDeck = [
+				slime.id, slime.id, slime.id,
+				golem.id, golem.id, golem.id,
+				treasureChest.id, treasureChest.id, treasureChest.id,
+				dragon.id, dragon.id,
+				witch.id, witch.id,
+				energyDrink.id, energyDrink.id, energyDrink.id,
+			];
 
 			socket.send(JSON.stringify({
 				type: 'enter',
@@ -91,10 +103,11 @@ export default Vue.extend({
 				socket.send(JSON.stringify({
 					type: 'ready',
 				}));
-			} else if (message.type === 'action') {
+			} else if (message.type === 'info') {
 				this.game = message.payload.game;
 			} else if (message.type === 'q') {
-				const { type, payload } = message.payload;
+				const { type, payload, game } = message.payload;
+				this.game = game;
 
 				let res = null;
 
@@ -102,6 +115,8 @@ export default Vue.extend({
 					res = await this.choiceRedrawCards(payload);
 				} else if (type === 'mainPhase') {
 					res = await this.mainPhase();
+				} else if (type === 'cardChoice') {
+					res = await this.cardChoice(payload);
 				}
 
 				socket.send(JSON.stringify({
@@ -130,6 +145,7 @@ export default Vue.extend({
 			console.log(this.game);
 			return new Promise(res => {
 				this.$once('play', payload => {
+					this.selectedHandCard = null;
 					res({ type: 'play', payload });
 				});
 			});
@@ -141,6 +157,26 @@ export default Vue.extend({
 		
 		play(index) {
 			this.$emit('play', { card: this.selectedHandCard, index: index });
+		},
+
+		playSpell() {
+			this.$emit('play', { card: this.selectedHandCard });
+		},
+
+		lookup(card: Card) {
+			return CARDS.find(x => x.id === card.def);
+		},
+
+		cardChoice(cards) {
+			return new Promise((res) => {
+				const vm = this.$root.new(XCardChoiceDialog, {
+					game: this.game,
+					cards: cards
+				}).$on('chosen', card => {
+					res(card.id);
+					vm.$el.parentNode.removeChild(vm.$el);
+				});
+			});
 		}
 	}
 });
