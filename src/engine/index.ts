@@ -15,16 +15,20 @@ type Field = {
 	back2: [Cell, Cell, Cell];
 };
 
-type CardDef = {
+type API = {
+	cardChoice: (player: number, cards: Card[], callback: (chosen: Card) => State) => void;
+};
+
+export type CardDef = {
 	id: string;
 	type: string;
 	cost: number;
 } & ({
 	type: 'unit';
-	setup: (game: Game, thisCard: Card) => void;
+	setup: (state: GameState, thisCard: Card, api: API, callback: Function) => GameState;
 } | {
 	type: 'spell';
-	action: (game: Game, thisCard: Card) => void;
+	action: (state: GameState, thisCard: Card, api: API, callback: Function) => GameState;
 });
 
 export type Card = {
@@ -52,6 +56,66 @@ type State = {
 	turn: number;
 	winner: number | null;
 };
+
+export class GameState {
+	public state: State;
+	private cardDefs: CardDef[];
+
+	constructor(state: State, cardDefs: CardDef[]) {
+		this.state = state;
+		this.cardDefs = cardDefs;
+	}
+
+	private lookupCard(card: Card | Card['id']): CardDef {
+		if (typeof card === 'string') {
+			return this.cardDefs.find(def => def.id === card)!;
+		} else {
+			return this.cardDefs.find(def => def.id === card.def)!;
+		}
+	}
+
+	public draw(player: number): Card | null {
+		const deck = player === 0 ? this.state.player1.deck : this.state.player2.deck;
+		const hand = player === 0 ? this.state.player1.hand : this.state.player2.hand;
+
+		// デッキの一番上にあるカードを取得
+		const card = deck[0];
+
+		if (card === undefined) {
+			// デッキがなくなったら負け
+			this.state.winner = player === 0 ? 1 : 0;
+			return null;
+		} else {
+			deck.shift();
+			hand.push(card);
+			return card;
+		}
+	}
+
+	public summon(card: Card, index: number) {
+		const def = this.lookupCard(card);
+/*
+		if (this.players[card.owner].energy < def.cost) {
+			throw new Error('no energy');
+		}
+
+		this.players[card.owner].energy -= def.cost;
+*/
+		this.setUnit(card, this.state.turn === 0 ? 'back1' : 'back2', index);
+	}
+
+	public setUnit(card: Card, section: keyof State['field'], index: number) {
+		const def = this.lookupCard(card);
+
+		if (this.state.field[section][index].type === 'empty') {
+			this.state.field[section][index] = {
+				type: 'unit',
+				card: card
+			};
+			//def.setup({ game: this, thisCard: card });
+		}
+	}
+}
 
 export class Game {
 	private cards: CardDef[];
@@ -104,11 +168,6 @@ export class Game {
 		} else {
 			return this.cards.find(def => def.id === card.def)!;
 		}
-	}
-
-	public getCardPos(card: Card): number | null {
-		const index = this.field.findIndex(cell => cell.type === 'unit' && cell.card.id === card.id);
-		return index > -1 ? index : null;
 	}
 
 	private shuffle(cards: Card[], rng: seedrandom.prng): Card[] {
@@ -169,29 +228,7 @@ export class Game {
 		this.mainPhase();
 	}
 
-	public draw(player: number): Card | null {
-		const deck = this.players[player].deck;
-	
-		// デッキの一番上にあるカードを取得
-		const card = deck[0];
-
-		if (card === undefined) {
-			// デッキがなくなったら負け
-			this.state.winner = player === 0 ? 1 : 0;
-			return null;
-		} else {
-			deck.shift();
-			this.state.players[player].hand.push(card);
-			return card;
-		}
-	}
-
-	public async cardChoice(target: number, cards: Card[]) {
-		const choice = await this.controller.q('cardChoice', cards);
-		return cards[choice];
-	}
-
-	private async useSpell(card: Card | Card['id']) {
+	private useSpell(gs: GameState, card: Card, callback: Function): State {
 		const def = this.lookupCard(card);
 
 		// TODO: 対象カードがspellか判定必要?
@@ -201,7 +238,18 @@ export class Game {
 			throw 'something happened';
 		}
 
-		def.action(this, card);
+		const api: API = {
+			cardChoice: (player, cards, callback) => {
+				this.q(player, 'cardChoice', cards, (chosen, state) => {
+					const cardId = chosen;
+					const card = cards.find(c => c.id === cardId);
+					if (card == null) throw new Error('no such card');
+					return callback(card);
+				})
+			}
+		};
+
+		return def.action(gs, card, api, callback);
 	}
 
 	private get turn() {
@@ -214,17 +262,21 @@ export class Game {
 	 */
 	private async mainPhase() {
 		await this.q(this.turn, 'mainPhase', null, (action, state) => {
+			const gs = new GameState(state, this.cards);
 			const player = state.turn === 0 ? state.player1 : state.player2;
 			switch (action.type) {
 				case 'play':
-					const cardId = action.payload.card;
+					const cardId = action.payload.card as string;
 					const card = player.hand.find(c => c.id === cardId);
 					if (card == null) throw new Error('no such card');
 					const cardDef = this.lookupCard(card);
 					if (cardDef.type === 'unit') {
-						this.summon(state, card, action.payload.index);
+						gs.summon(card, action.payload.index);
+						this.mainPhase();
 					} else if (cardDef.type === 'spell') {
-						this.useSpell(cardId);
+						this.useSpell(gs, card, () => {
+							this.mainPhase();
+						});
 					}
 					return state;
 	
@@ -236,33 +288,5 @@ export class Game {
 				default: throw new Error('Unknown main phase action: ' + action.type);
 			}
 		});
-
-		this.mainPhase();
-	}
-
-	public summon(state: State, card: Card, index: number): State {
-		const def = this.lookupCard(card);
-/*
-		if (this.players[card.owner].energy < def.cost) {
-			throw new Error('no energy');
-		}
-
-		this.players[card.owner].energy -= def.cost;
-*/
-		return this.setUnit(state, card, this.turn === 0 ? 'back1' : 'back2', index);
-	}
-
-	public setUnit(state: State, card: Card, section: keyof State['field'], index: number): State {
-		const def = this.lookupCard(card);
-
-		if (state.field[section][index].type === 'empty') {
-			state.field[section][index] = {
-				type: 'unit',
-				card: card
-			};
-			//def.setup({ game: this, thisCard: card });
-		}
-
-		return state;
 	}
 }

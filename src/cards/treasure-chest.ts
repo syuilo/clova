@@ -1,4 +1,4 @@
-import { Game, Card } from '../engine';
+import { Game, Card, CardDef } from '../engine';
 
 // 「カードを2枚ドローし、そのどちらかを捨てる」
 // という効果を持つスペルカード
@@ -9,14 +9,15 @@ export default {
 	image: 'https://1.bp.blogspot.com/-abtG2HYMsA8/UU--5kLFD0I/AAAAAAAAO_w/ta20nlofB6Y/s400/kaizoku_takara.png',
 	type: 'spell' as const,
 	cost: 3,
-	action: async (game: Game, thisCard: Card) => {
-		const drawed1 = game.draw(thisCard.owner);
-		if (drawed1 === null) return;
-		const drawed2 = game.draw(thisCard.owner);
-		if (drawed2 === null) return;
+	action: (state, thisCard, api, end) => {
+		const drawed1 = api.draw(thisCard.owner);
+		const drawed2 = api.draw(thisCard.owner);
 
-		const chosen = await game.cardChoice(thisCard.owner, [drawed1, drawed2]);
+		api.cardChoice(thisCard.owner, [drawed1, drawed2], chosen => {
+			api.dropHandCard(chosen);
+			end();
+		});
 
-		game.dropHandCard(chosen);
+		return state;
 	}
-};
+} as CardDef;
