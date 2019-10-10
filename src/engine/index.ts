@@ -16,7 +16,7 @@ type Field = {
 };
 
 type API = {
-	cardChoice: (player: number, cards: Card[], callback: (chosen: Card) => State) => void;
+	cardChoice: (player: number, cards: Card[], callback: (chosen: Card) => void) => void;
 };
 
 export type CardDef = {
@@ -244,7 +244,8 @@ export class Game {
 					const cardId = chosen;
 					const card = cards.find(c => c.id === cardId);
 					if (card == null) throw new Error('no such card');
-					return callback(card);
+					callback(card);
+					return gs.state;
 				})
 			}
 		};
