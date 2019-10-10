@@ -4,11 +4,11 @@
 		<div id="opponent-hand" v-if="game">
 			<div v-for="i in game.opponentHandCount" :key="i"></div>
 		</div>
-		<div id="field">
+		<div id="field" v-if="game">
 			<div id="back2">
-				<div></div>
-				<div></div>
-				<div></div>
+				<div><x-card v-if="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][0].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][0].card" :game="game"/></div>
+				<div><x-card v-if="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][1].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][1].card" :game="game"/></div>
+				<div><x-card v-if="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][2].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][2].card" :game="game"/></div>
 			</div>
 			<div id="front">
 				<div></div>
@@ -17,13 +17,18 @@
 				<div></div>
 			</div>
 			<div id="back1">
-				<div></div>
-				<div></div>
-				<div></div>
+				<div @click="play(0)"><x-card v-if="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][0].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][0].card" :game="game"/></div>
+				<div @click="play(1)"><x-card v-if="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][1].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][1].card" :game="game"/></div>
+				<div @click="play(2)"><x-card v-if="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][2].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][2].card" :game="game"/></div>
 			</div>
 		</div>
 		<div id="hand" v-if="game">
-			<x-card v-for="(card, i) in game.myHand" :key="card.id" :card="card" :game="game" :style="{ transform: `translateZ(${i * 4}px)` }" @click="play(card)"/>
+			<x-card v-for="(card, i) in game.myHand" :key="card.id"
+				:card="card"
+				:game="game"
+				:style="{ transform: `translateZ(${i * 4}px)` }"
+				@click="select(card)"
+				:class="{ selected: selectedHandCard === card.id }"/>
 		</div>
 	</div>
 </div>
@@ -50,7 +55,8 @@ export default Vue.extend({
 		return {
 			game: null as Game | null,
 			myPlayerNumber: null as null | number,
-			isMyMainPhase: false
+			isMyMainPhase: false,
+			selectedHandCard: null
 		};
 	},
 
@@ -87,7 +93,7 @@ export default Vue.extend({
 				}));
 			} else if (message.type === 'action') {
 				this.game = message.payload.game;
-			} else if (message.type === 'actionRequest') {
+			} else if (message.type === 'q') {
 				const { type, payload } = message.payload;
 
 				let res = null;
@@ -129,8 +135,12 @@ export default Vue.extend({
 			});
 		},
 
-		play(card) {
-			this.$emit('play', card.id);
+		select(card) {
+			this.selectedHandCard = card.id;
+		},
+		
+		play(index) {
+			this.$emit('play', { card: this.selectedHandCard, index: index });
 		}
 	}
 });
@@ -167,6 +177,9 @@ export default Vue.extend({
 		position relative
 		margin 0 -8px
 
+		&.selected
+			box-shadow 0 0 8px #0f0
+
 #field
 	> div
 		text-align center
@@ -179,6 +192,13 @@ export default Vue.extend({
 			border solid 2px #b7b7b7
 			border-radius 8px
 			backdrop-filter blur(4px)
+			perspective 2000px
+			transform-style preserve-3d
+
+			> *
+				position absolute
+				top 0
+				left 0
 
 		&#back1 > div
 			border-color #a4c5d8

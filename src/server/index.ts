@@ -42,7 +42,7 @@ function createGame(player1Deck: string[], player2Deck: string[], player1ws: Web
 
 	const controller = new Controller((player, type, payload) => {
 		(player === 0 ? player1ws : player2ws).send(JSON.stringify({
-			type: 'actionRequest',
+			type: 'q',
 			payload: {
 				type: type,
 				payload: payload
@@ -50,9 +50,7 @@ function createGame(player1Deck: string[], player2Deck: string[], player1ws: Web
 		}));
 	});
 
-	const game = new Game(CARDS, [player1, player2], controller, 'seed');
-
-	return game;
+	return new Game(CARDS, [player1, player2], controller, 'seed');
 }
 
 wss.on('connection', (ws, req) => {
@@ -62,7 +60,7 @@ wss.on('connection', (ws, req) => {
 	if (roomName == null) return;
 	console.log('Connected', name);
 
-	ws.on('message', message => {
+	ws.on('message', async message => {
 		const msg = JSON.parse(message.toString());
 		console.log(msg.type, msg.payload);
 	
@@ -117,7 +115,7 @@ wss.on('connection', (ws, req) => {
 				payload: msg.payload,
 			};
 	
-			if (!rooms[roomName].game.controller.input(action)) throw new Error('invalid input');
+			if (!await rooms[roomName].game.controller.input(action)) throw new Error('invalid input');
 	
 			rooms[roomName].player1ws.send(JSON.stringify({ type: 'action', payload: {
 				game: rooms[roomName].game.getStateForClient(0),

@@ -93,6 +93,10 @@ export class Game {
 		return this.players[this.turn];
 	}
 
+	private get field() {
+		return this.state.field;
+	}
+
 	public getState() {
 		return this.state;
 	}
@@ -154,31 +158,32 @@ export class Game {
 		let player1Cards = [deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!];
 		let player2Cards = [deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!];
 
-		const [player1redraw, player2redraw] = await Promise.all([
-			this.controller.output(0, 'choiceRedrawCards', player1Cards),
-			this.controller.output(1, 'choiceRedrawCards', player2Cards)
+		await Promise.all([
+			this.controller.q(0, 'choiceRedrawCards', player1Cards, player1redraw => {
+				// TODO: validate param
+				for (const id of player1redraw) {
+					deck1.push(player1Cards.find(x => x.id === id)!);
+					player1Cards = player1Cards.filter(x => x.id !== id);
+				}
+				this.shuffle(deck1);
+				for (let i = 0; i < player1redraw.length; i++) {
+					player1Cards.push(deck1.shift()!);
+				}
+				this.players[0].hand = player1Cards;
+			}),
+			this.controller.q(1, 'choiceRedrawCards', player2Cards, player2redraw => {
+				// TODO: validate param
+				for (const id of player2redraw) {
+					deck2.push(player2Cards.find(x => x.id === id)!);
+					player2Cards = player2Cards.filter(x => x.id !== id);
+				}
+				this.shuffle(deck2);
+				for (let i = 0; i < player2redraw.length; i++) {
+					player2Cards.push(deck2.shift()!);
+				}
+				this.players[1].hand = player2Cards;
+			})
 		]);
-
-		for (const id of player1redraw) {
-			deck1.push(player1Cards.find(x => x.id === id)!);
-			player1Cards = player1Cards.filter(x => x.id !== id);
-		}
-		this.shuffle(deck1);
-		for (let i = 0; i < player1redraw.length; i++) {
-			player1Cards.push(deck1.shift()!);
-		}
-
-		for (const id of player2redraw) {
-			deck2.push(player2Cards.find(x => x.id === id)!);
-			player2Cards = player2Cards.filter(x => x.id !== id);
-		}
-		this.shuffle(deck2);
-		for (let i = 0; i < player2redraw.length; i++) {
-			player2Cards.push(deck2.shift()!);
-		}
-
-		this.players[0].hand = player1Cards;
-		this.players[1].hand = player2Cards;
 
 		this.mainPhase();
 	}
@@ -201,11 +206,11 @@ export class Game {
 	}
 
 	public async cardChoice(target: number, cards: Card[]) {
-		const choice = await this.controller.output('cardChoice', cards);
+		const choice = await this.controller.q('cardChoice', cards);
 		return cards[choice];
 	}
 
-	private useSpell(card: Card | Card['id']) {
+	private async useSpell(card: Card | Card['id']) {
 		const def = this.lookupCard(card);
 
 		// TODO: 対象カードがspellか判定必要?
@@ -222,57 +227,53 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
-		const action = await this.controller.output(this.turn, 'mainPhase');
-
-		switch (action.type) {
-			case 'play':
-				const cardId = action.payload;
-				const cardDef = this.lookupCard(cardId);
-				if (cardDef.type === 'unit') {
-					this.summon(cardId);
-				} else if (cardDef.type === 'spell') {
-					this.useSpell(cardId);
-				}
-				break;
-
-			case 'turnEnd':
-				// TODO
-				break;
-		
-			default: throw new Error('Unknown main phase action: ' + action.type);
-		}
-
-		this.mainPhase();
+		await this.controller.q(this.turn, 'mainPhase', null, action => {
+			switch (action.type) {
+				case 'play':
+					const cardId = action.payload.card;
+					const card = this.currentPlayer.hand.find(c => c.id === cardId);
+					if (card == null) throw new Error('no such card');
+					const cardDef = this.lookupCard(card);
+					if (cardDef.type === 'unit') {
+						this.summon(card, action.payload.index);
+					} else if (cardDef.type === 'spell') {
+						this.useSpell(cardId);
+					}
+					break;
+	
+				case 'turnEnd':
+					// TODO
+					break;
+			
+				default: throw new Error('Unknown main phase action: ' + action.type);
+			}
+	
+			this.mainPhase();
+		});
 	}
 
-	public summon(card: Card, pos: number): void {
+	public summon(card: Card, index: number): void {
 		const def = this.lookupCard(card);
-
+/*
 		if (this.players[card.owner].energy < def.cost) {
 			throw new Error('no energy');
 		}
 
 		this.players[card.owner].energy -= def.cost;
-
-		this.setUnit(card, pos);
+*/
+		this.setUnit(card, this.turn === 0 ? 'back1' : 'back2', index);
 	}
 
-	public setUnit(card: Card, pos: number): void {
+	public setUnit(card: Card, section: keyof Game['state']['field'], index: number): void {
 		const def = this.lookupCard(card);
 
-		let cell = this.field[pos];
-
-		if (cell.type === 'empty') {
-			cell = {
+		if (this.field[section][index].type === 'empty') {
+			this.field[section][index] = {
 				type: 'unit',
 				card: card
 			};
-			this.commit({
-				player: this.turn,
-				type: 'summon',
-				card: card.id
-			});
-			def.setup({ game: this, thisCard: card });
+			console.log(this.field);
+			//def.setup({ game: this, thisCard: card });
 		}
 	}
 }
