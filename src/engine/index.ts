@@ -278,12 +278,13 @@ export class Game {
 		const drawed = this.draw(this.turn);
 		if (drawed == null) return;
 
+		const movedUnits: Card['id'][] = [];
+		const attackedUnits: Card['id'][] = [];
+		const playedUnits: Card['id'][] = [];
+
 		let ended = false;
 		while (!ended) {
-			const movedCards: Card['id'][] = [];
-			const attackedCards: Card['id'][] = [];
 			const action = await this.io.q(this.turn, 'mainPhase');
-
 			switch (action.type) {
 				// カード使用
 				case 'play': {
@@ -300,6 +301,7 @@ export class Game {
 					this.player.hand = this.player.hand.filter(c => c.id !== cardId);
 	
 					if (cardDef.type === 'unit') {
+						playedUnits.push(card.id);
 						this.summon(card as UnitCard, action.payload.index);
 					} else if (cardDef.type === 'spell') {
 						await this.useSpell(card);
@@ -316,11 +318,12 @@ export class Game {
 					const card = this.findUnit(cardId);
 					if (card === null) throw new Error('no such card');
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
-					if (movedCards.includes(card.id)) throw new Error('the card is already moved in this turn');
+					if (movedUnits.includes(card.id)) throw new Error('the card is already moved in this turn');
+					if (playedUnits.includes(card.id)) throw new Error('you can not move unit that played in this turn');
 					const pos = this.findUnitPosition(card)!;
 					this.state.field.front[index] = { type: 'unit', card: card };
 					this.state.field[pos[0]][pos[1]] = { type: 'empty' };
-					movedCards.push(card.id);
+					movedUnits.push(card.id);
 					break;
 				}
 
@@ -332,7 +335,7 @@ export class Game {
 					const attacker = this.findUnit(cardId);
 					if (attacker === null) throw new Error('no such attacker');
 					if (attacker.owner !== this.turn) throw new Error('the attacker is not yours');
-					if (attackedCards.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
+					if (attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
 					const attackee = this.findUnit(targetId);
 					if (attackee === null) throw new Error('no such attackee');
 					if (attackee.owner === this.turn) throw new Error('the attackee is yours');
@@ -340,7 +343,7 @@ export class Game {
 					const attackeePos = this.findUnitPosition(attackee)!;
 					// TODO: validate position
 
-					attackedCards.push(attacker.id);
+					attackedUnits.push(attacker.id);
 
 					// Battle
 					const attackerPower = attacker!.power;

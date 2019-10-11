@@ -56,6 +56,9 @@ export default Vue.extend({
 			myPlayerNumber: null as null | number,
 			selectedHandCard: null,
 			selectedFieldCard: null,
+			movedUnits: [],
+			attackedUnits: [],
+			playedUnits: [],
 		};
 	},
 
@@ -156,6 +159,9 @@ export default Vue.extend({
 
 				this.$once('turnEnd', () => {
 					this.selectedHandCard = null;
+					this.movedUnits = [];
+					this.attackedUnits = [];
+					this.playedUnits = [];
 					res({ type: 'end' });
 				});
 			});
@@ -167,6 +173,8 @@ export default Vue.extend({
 		},
 
 		play(index) {
+			if (this.selectedHandCard == null) return;
+			this.playedUnits.push(this.selectedHandCard);
 			this.$emit('play', { card: this.selectedHandCard, index: index });
 		},
 
