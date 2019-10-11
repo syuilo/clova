@@ -41,6 +41,7 @@ import dragon from '../cards/dragon';
 import witch from '../cards/witch';
 import energyDrink from '../cards/energy-drink';
 import { Card, ClientState } from '../engine';
+import mimic from '../cards/mimic';
 
 type Game = ClientState;
 
@@ -79,6 +80,7 @@ export default Vue.extend({
 				dragon.id, dragon.id,
 				witch.id, witch.id,
 				energyDrink.id, energyDrink.id, energyDrink.id,
+				mimic.id, mimic.id,
 			];
 
 			socket.send(JSON.stringify({

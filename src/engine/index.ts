@@ -85,6 +85,7 @@ export class Game {
 	public io: Controller;
 	public state: State;
 	private rng: seedrandom.prng;
+	public destroyHandlers: Record<string, Function> = {};
 
 	constructor(cards: Game['cards'], player1Deck: string[], player2Deck: string[], controller: Controller, seed: any) {
 		const empty = () => ({
@@ -370,6 +371,12 @@ export class Game {
 		const pos = this.findUnitPosition(unit);
 		if (pos === null) throw new Error('no such unit');
 		this.state.field[pos[0]][pos[1]] = { type: 'empty' };
+
+		// 破壊時ハンドラを実行
+		if (this.destroyHandlers[unit.id]) {
+			this.destroyHandlers[unit.id]();
+			delete this.destroyHandlers[unit.id];
+		}
 	}
 
 	public draw(player: number): Card | null {
