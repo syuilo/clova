@@ -20,6 +20,7 @@ type Field = {
 
 type API = {
 	cardChoice: (player: number, cards: Card[]) => Promise<Card>;
+	unitChoice: (player: number | null) => Promise<UnitCard>;
 };
 
 export type CardDef = {
@@ -55,6 +56,7 @@ export type Card = UnitCard | SpellCard;
 type Player = {
 	deck: Card[];
 	hand: Card[];
+	trash: Card[];
 	energy: number;
 	life: number;
 }
@@ -70,8 +72,10 @@ type State = {
 export type ClientState = {
 	opponentHandCount: number;
 	opponentDeckCount: number;
+	opponentTrashCount: number;
 	myHand: Card[];
 	myDeck: Card[];
+	myTrash: Card[];
 	myLife: number;
 	opponentLife: number;
 	myEnergy: number;
@@ -111,6 +115,7 @@ export class Game {
 				};
 			}),
 			hand: [],
+			trash: [],
 			energy: 3,
 			life: 20
 		};
@@ -129,6 +134,7 @@ export class Game {
 				};
 			}),
 			hand: [],
+			trash: [],
 			energy: 3,
 			life: 20
 		};
@@ -162,8 +168,10 @@ export class Game {
 		return {
 			opponentHandCount: player === 0 ? this.state.player2.hand.length : this.state.player1.hand.length,
 			opponentDeckCount: player === 0 ? this.state.player2.deck.length : this.state.player1.deck.length,
+			opponentTrashCount: player === 0 ? this.state.player2.trash.length : this.state.player1.trash.length,
 			myHand: player === 0 ? this.state.player1.hand : this.state.player2.hand,
 			myDeck: player === 0 ? this.state.player1.deck : this.state.player2.deck,
+			myTrash: player === 0 ? this.state.player1.trash : this.state.player2.trash,
 			myLife: player === 0 ? this.state.player1.life : this.state.player2.life,
 			opponentLife: player === 0 ? this.state.player2.life : this.state.player1.life,
 			myEnergy: player === 0 ? this.state.player1.energy : this.state.player2.energy,
@@ -257,6 +265,8 @@ export class Game {
 		if (def.type !== 'spell') {
 			throw new Error('spell card required');
 		}
+
+		(card.owner === 0 ? this.state.player1 : this.state.player2).trash.push(card);
 
 		const api: API = {
 			cardChoice: async (player, cards) => {
@@ -355,6 +365,24 @@ export class Game {
 
 					break;
 				}
+
+				// プレイヤーへ攻撃
+				case 'directAttack': {
+					const cardId = action.payload.card;
+	
+					const attacker = this.findUnit(cardId);
+					if (attacker === null) throw new Error('no such attacker');
+					if (attacker.owner !== this.turn) throw new Error('the attacker is not yours');
+					if (attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
+					const attackerPos = this.findUnitPosition(attacker)!;
+					// TODO: validate position
+
+					attackedUnits.push(attacker.id);
+
+					const target = this.turn === 0 ? this.state.player2 : this.state.player1;
+					this.damage(target, attacker!.power);
+					break;
+				}
 	
 				// ターンエンド
 				case 'end': {
@@ -372,6 +400,10 @@ export class Game {
 		this.mainPhase();
 	}
 
+	public damage(target: Player, amount: number) {
+		target.life -= amount;
+	}
+
 	/**
 	 * Destroy a unit
 	 */
@@ -379,6 +411,7 @@ export class Game {
 		const pos = this.findUnitPosition(unit);
 		if (pos === null) throw new Error('no such unit');
 		this.state.field[pos[0]][pos[1]] = { type: 'empty' };
+		(unit.owner === 0 ? this.state.player1 : this.state.player2).trash.push(unit);
 
 		// 破壊時ハンドラを実行
 		if (this.destroyHandlers[unit.id]) {

@@ -10,14 +10,16 @@
 		<x-field v-if="game" :game="game" :my="myPlayerNumber"
 			@play="play"
 			@move="$emit('move', $event)"
-			@attack="$emit('attack', $event)"/>
+			@attack="$emit('attack', $event)"
+			@directAttack="$emit('directAttack', $event)"/>
 	</div>
 	<div id="hand" v-if="game">
-		<x-card v-for="card in game.myHand" :key="card.id"
+		<x-card v-for="card in game.myHand" :key="card.id" class="card"
 			:card="card"
 			:game="game"
 			@click="select(card)"
 			:class="{ selected: selectedHandCard === card.id, disabled: lookup(card).cost > game.myEnergy }"/>
+		<div class="energy">{{ game.myEnergy }}</div>
 	</div>
 	<div>
 		<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
@@ -157,6 +159,10 @@ export default Vue.extend({
 					res({ type: 'attack', payload });
 				});
 
+				this.$once('directAttack', payload => {
+					res({ type: 'directAttack', payload });
+				});
+
 				this.$once('turnEnd', () => {
 					this.selectedHandCard = null;
 					this.movedUnits = [];
@@ -219,7 +225,7 @@ export default Vue.extend({
 	> .field
 		perspective 1000px
 		transform-style preserve-3d
-		margin -130px 0 -70px 0
+		margin -130px 0 0 0
 
 #opponent-hand
 	text-align center
@@ -242,8 +248,21 @@ export default Vue.extend({
 	border-radius 16px
 	backdrop-filter blur(6px)
 	padding 16px
+	margin-bottom 50px
 
-	> *
+	> .energy
+		position absolute
+		bottom -33px
+		left 0
+		right 0
+		width 100px
+		margin auto
+		padding-bottom 8px
+		line-height 25px
+		background rgba(0, 0, 0, 0.5)
+		border-radius 0 0 16px 16px
+
+	> .card
 		position relative
 		margin 0 4px
 		border solid 1px rgba(255, 255, 255, 0.3)

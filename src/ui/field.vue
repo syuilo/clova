@@ -1,5 +1,7 @@
 <template>
 <div id="field">
+	<div class="life my">{{ game.myLife.toString().padStart(2, '0') }}</div>
+	<div class="life opponent" @click="directAttack">{{ game.opponentLife.toString().padStart(2, '0') }}</div>
 	<div class="cells">
 		<div id="back2">
 			<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
@@ -17,10 +19,10 @@
 				@selected="onSelected" @move="play(i)"/>
 		</div>
 	</div>
-	<div class="life my">{{ game.myLife.toString().padStart(2, '0') }}</div>
-	<div class="life opponent">{{ game.opponentLife.toString().padStart(2, '0') }}</div>
-	<div class="energy my">{{ game.myEnergy.toString().padStart(2, '0') }}</div>
-	<div class="energy opponent">{{ game.opponentEnergy.toString().padStart(2, '0') }}</div>
+	<div class="deck my">{{ game.myDeck.length.toString().padStart(2, '0') }}</div>
+	<div class="deck opponent">{{ game.opponentDeckCount.toString().padStart(2, '0') }}</div>
+	<div class="trash my">{{ game.myTrash.length.toString().padStart(2, '0') }}</div>
+	<div class="trash opponent">{{ game.opponentTrashCount.toString().padStart(2, '0') }}</div>
 </div>
 </template>
 
@@ -75,6 +77,13 @@ export default Vue.extend({
 			} else {
 				this.selected = card;
 			}
+		},
+
+		directAttack() {
+			if (this.selected == null) return;
+			if (this.$parent.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
+			this.$parent.attackedUnits.push(this.selected.id);
+			this.$emit('directAttack', { card: this.selected.id });
 		}
 	}
 });
@@ -95,6 +104,25 @@ export default Vue.extend({
 
 	> .life
 		position absolute
+		left 0
+		right 0
+		width 100px
+		font-weight bold
+		font-size 30px
+		padding 8px 16px
+		margin -32px auto
+		cursor pointer
+
+		&.my
+			bottom 0
+			background rgba(41, 110, 214, 0.5)
+
+		&.opponent
+			top 0
+			background rgba(214, 41, 57, 0.5)
+
+	> .trash
+		position absolute
 		background rgba(214, 41, 177, 0.5)
 		font-weight bold
 		font-size 30px
@@ -108,7 +136,7 @@ export default Vue.extend({
 			right $padding
 			top $padding
 
-	> .energy
+	> .deck
 		position absolute
 		background rgba(214, 161, 41, 0.5)
 		font-weight bold
