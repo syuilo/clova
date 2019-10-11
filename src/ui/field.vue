@@ -64,7 +64,7 @@ export default Vue.extend({
 		move(index) {
 			if (this.selected == null) return;
 			if (this.$parent.movedUnits.includes(this.selected.id)) return alert('このユニットは既に移動しました');
-			if (this.$parent.playedUnits.includes(this.selected.id)) return alert('プレイしたターンに移動することはできません');
+			if (this.$parent.playedUnits.includes(this.selected.id) && !this.selected.skills.includes('quick')) return alert('プレイしたターンに移動することはできません');
 			this.$parent.movedUnits.push(this.selected.id);
 			this.$emit('move', { card: this.selected.id, index: index });
 		},
@@ -72,6 +72,7 @@ export default Vue.extend({
 		onSelected(card) {
 			if (this.selected && card.owner !== this.my) {
 				if (this.$parent.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
+				if (this.$parent.playedUnits.includes(this.selected.id) && !this.selected.skills.includes('quick')) return alert('プレイしたターンに攻撃することはできません');
 				this.$parent.attackedUnits.push(this.selected.id);
 				this.$emit('attack', { card: this.selected.id, target: card.id });
 			} else {

@@ -9,6 +9,7 @@ export default {
 	type: 'unit' as const,
 	power: 4,
 	cost: 4,
+	skills: [],
 	setup: async (game, thisCard) => {
 		game.destroyHandlers[thisCard.id] = () => {
 			game.draw(thisCard.owner === 0 ? 1 : 0);
