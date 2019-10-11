@@ -1,5 +1,6 @@
 <template>
 <div id="game">
+	<p v-if="isMyTurn">あなたのターンです</p>
 	<div>
 		<div id="opponent-hand" v-if="game">
 			<div v-for="i in game.opponentHandCount" :key="i"></div>
@@ -32,6 +33,7 @@
 		</div>
 	</div>
 	<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
+	<button v-if="isMyTurn" @click="turnEnd()">ターンエンド</button>
 </div>
 </template>
 
@@ -48,11 +50,9 @@ import treasureChest from '../cards/treasure-chest';
 import dragon from '../cards/dragon';
 import witch from '../cards/witch';
 import energyDrink from '../cards/energy-drink';
-import { Card } from '../engine';
+import { Card, ClientState } from '../engine';
 
-type Game = {
-
-};
+type Game = ClientState;
 
 export default Vue.extend({
 	components: {
@@ -63,9 +63,14 @@ export default Vue.extend({
 		return {
 			game: null as Game | null,
 			myPlayerNumber: null as null | number,
-			isMyMainPhase: false,
 			selectedHandCard: null
 		};
+	},
+
+	computed: {
+		isMyTurn(): boolean {
+			return this.game.turn === this.myPlayerNumber;
+		}
 	},
 
 	created() {
@@ -141,12 +146,15 @@ export default Vue.extend({
 		},
 
 		mainPhase() {
-			this.isMyMainPhase = true;
-			console.log(this.game);
 			return new Promise(res => {
 				this.$once('play', payload => {
 					this.selectedHandCard = null;
 					res({ type: 'play', payload });
+				});
+
+				this.$once('turnEnd', () => {
+					this.selectedHandCard = null;
+					res({ type: 'end' });
 				});
 			});
 		},
@@ -161,6 +169,10 @@ export default Vue.extend({
 
 		playSpell() {
 			this.$emit('play', { card: this.selectedHandCard });
+		},
+
+		turnEnd() {
+			this.$emit('turnEnd');
 		},
 
 		lookup(card: Card) {
@@ -184,6 +196,7 @@ export default Vue.extend({
 
 <style lang="stylus" scoped>
 #game
+	text-align center
 	perspective 2000px
 	transform-style preserve-3d
 

@@ -1,9 +1,13 @@
 import { Controller } from './controller';
 import * as seedrandom from 'seedrandom';
 
-type Cell = {
+type Cell = EmptyCell | UnitCell;
+
+type EmptyCell = {
 	type: 'empty';
-} | {
+};
+
+type UnitCell = {
 	type: 'unit';
 	card: Card;
 };
@@ -56,9 +60,18 @@ type State = {
 	winner: number | null;
 };
 
+export type ClientState = {
+	opponentHandCount: number;
+	opponentDeckCount: number;
+	myHand: Card[];
+	myDeck: Card[];
+	field: Field;
+	turn: number;
+};
+
 export class Game {
 	private cards: CardDef[];
-	public controller: Controller;
+	public io: Controller;
 	public state: State;
 	private rng: seedrandom.prng;
 
@@ -80,7 +93,7 @@ export class Game {
 		};
 
 		this.cards = cards;
-		this.controller = controller;
+		this.io = controller;
 		this.rng = seedrandom(seed);
 	}
 
@@ -92,13 +105,14 @@ export class Game {
 		return this.turn === 0 ? this.state.player1 : this.state.player2;
 	}
 
-	public getStateForClient(player: number) {
+	public getStateForClient(player: number): ClientState {
 		return {
 			opponentHandCount: player === 0 ? this.state.player2.hand.length : this.state.player1.hand.length,
 			opponentDeckCount: player === 0 ? this.state.player2.deck.length : this.state.player1.deck.length,
 			myHand: player === 0 ? this.state.player1.hand : this.state.player2.hand,
 			myDeck: player === 0 ? this.state.player1.deck : this.state.player2.deck,
-			field: this.state.field
+			field: this.state.field,
+			turn: this.turn,
 		};
 	}
 
@@ -131,8 +145,8 @@ export class Game {
 		let player2Cards = [deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!];
 
 		const [player1redraw, player2redraw] = await Promise.all([
-			this.controller.q(0, 'choiceRedrawCards', player1Cards),
-			this.controller.q(1, 'choiceRedrawCards', player2Cards),
+			this.io.q(0, 'choiceRedrawCards', player1Cards),
+			this.io.q(1, 'choiceRedrawCards', player2Cards),
 		]);
 
 		// TODO: validate param
@@ -169,7 +183,7 @@ export class Game {
 
 		const api: API = {
 			cardChoice: async (player, cards) => {
-				const chosen = await this.controller.q(player, 'cardChoice', cards);
+				const chosen = await this.io.q(player, 'cardChoice', cards);
 				const card = cards.find(c => c.id === chosen);
 				if (card == null) throw new Error('no such card');
 				return card;
@@ -183,33 +197,64 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
-		const action = await this.controller.q(this.turn, 'mainPhase');
+		let ended = false;
+		while (!ended) {
+			const movedCards: Card['id'][] = [];
+			const action = await this.io.q(this.turn, 'mainPhase');
 
-		switch (action.type) {
-			case 'play': {
-				const cardId = action.payload.card as string;
-				const card = this.player.hand.find(c => c.id === cardId);
-				if (card == null) throw new Error('no such card');
-
-				// 手札から抜く
-				this.player.hand = this.player.hand.filter(c => c.id !== cardId);
-
-				const cardDef = this.lookupCard(card);
-				if (cardDef.type === 'unit') {
-					this.summon(card, action.payload.index);
-				} else if (cardDef.type === 'spell') {
-					await this.useSpell(card);
+			switch (action.type) {
+				// カード使用
+				case 'play': {
+					const cardId = action.payload.card;
+					const card = this.player.hand.find(c => c.id === cardId);
+					if (card == null) throw new Error('no such card');
+	
+					// 手札から抜く
+					this.player.hand = this.player.hand.filter(c => c.id !== cardId);
+	
+					const cardDef = this.lookupCard(card);
+					if (cardDef.type === 'unit') {
+						this.summon(card, action.payload.index);
+					} else if (cardDef.type === 'spell') {
+						await this.useSpell(card);
+					}
+	
+					break;
 				}
+	
+				// ユニット移動
+				case 'move': {
+					const cardId = action.payload.card;
+					const index = action.payload.index;
+	
+					let card: Card | null = null;
+					const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+					const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+					const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+					if (posBack1 > -1) card = (this.state.field.back1[posBack1] as UnitCell).card;
+					if (posBack2 > -1) card = (this.state.field.back1[posBack2] as UnitCell).card;
+					if (posFront > -1) card = (this.state.field.back1[posFront] as UnitCell).card;
+					if (card === null) throw new Error('no such card');
+					if (card.owner !== this.turn) throw new Error('the card is not yours');
+					if (movedCards.includes(card.id)) throw new Error('the card is already moved in this turn');
 
-				break;
+					this.state.field.front[index] = { type: 'unit', card: card };
+					if (posBack1 > -1) this.state.field.back1[posBack1] = { type: 'empty' };
+					if (posBack2 > -1) this.state.field.back1[posBack2] = { type: 'empty' };
+					if (posFront > -1) this.state.field.back1[posFront] = { type: 'empty' };
+					movedCards.push(card.id);
+					break;
+				}
+	
+				// ターンエンド
+				case 'end': {
+					this.state.turn = this.turn === 0 ? 1 : 0;
+					ended = true;
+					break;
+				}
+			
+				default: throw new Error('Unknown main phase action: ' + action.type);
 			}
-
-			case 'turnEnd': {
-				this.state.turn = this.turn === 0 ? 1 : 0;
-				break;
-			}
-		
-			default: throw new Error('Unknown main phase action: ' + action.type);
 		}
 	
 		this.mainPhase();

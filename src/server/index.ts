@@ -127,7 +127,7 @@ wss.on('connection', (ws, req) => {
 				payload: msg.payload,
 			};
 	
-			rooms[roomName].game.controller.input(action);
+			rooms[roomName].game.io.input(action);
 		}
 	});
 });
