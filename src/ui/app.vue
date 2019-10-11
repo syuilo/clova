@@ -17,7 +17,7 @@
 			:card="card"
 			:game="game"
 			@click="select(card)"
-			:class="{ selected: selectedHandCard === card.id }"/>
+			:class="{ selected: selectedHandCard === card.id, disabled: lookup(card).cost > game.myEnergy }"/>
 	</div>
 	<div>
 		<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
@@ -160,6 +160,7 @@ export default Vue.extend({
 		},
 
 		select(card) {
+			if (this.lookup(card).cost > this.game.myEnergy) return;
 			this.selectedHandCard = card.id;
 		},
 
@@ -239,6 +240,9 @@ export default Vue.extend({
 
 		&.selected
 			box-shadow 0 0 8px #0f0
+
+		&.disabled
+			opacity 0.5
 
 #end
 	position fixed
