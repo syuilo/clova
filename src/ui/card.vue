@@ -35,9 +35,9 @@ export default Vue.extend({
 .card
 	display inline-block
 	vertical-align bottom
+	box-sizing border-box
 	width 120px
 	height 165px
-	border solid 2px #777
 	border-radius 8px
 	overflow hidden
 
@@ -55,7 +55,7 @@ export default Vue.extend({
 	> header
 		font-size 10px
 		line-height 20px
-		border-bottom solid 1px #eee
+		border-bottom solid 1px rgba(0, 0, 0, 0.1)
 
 	> .image
 		margin-top 8px

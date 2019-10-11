@@ -57,6 +57,13 @@ export default Vue.extend({
 
 <style lang="stylus" scoped>
 #field
+	background-color #151515
+	background-image url('file:///C:/Users/ai/Pictures/inspire/2015-12-05_00022.jpg')
+	background-size cover
+	background-position center center
+	padding 16px 0
+	margin -60px 0 16px 0
+	transform rotateX(45deg)
 	$margin = 16px
 
 	> div
@@ -69,9 +76,9 @@ export default Vue.extend({
 			width 120px
 			height 165px
 			margin 0 ($margin / 2)
-			border solid 2px #b7b7b7
+			border solid 2px rgba(255, 255, 255, 0.2)
 			border-radius 8px
-			backdrop-filter blur(4px)
+			backdrop-filter blur(16px)
 			perspective 2000px
 			transform-style preserve-3d
 

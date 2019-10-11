@@ -1,18 +1,18 @@
 <template>
 <div id="game">
 	<p v-if="isMyTurn">あなたのターンです</p>
-	<div>
-		<div id="opponent-hand" v-if="game">
-			<div v-for="i in game.opponentHandCount" :key="i"></div>
-		</div>
-		<x-field id="field" v-if="game" :game="game" :my="myPlayerNumber" @play="play" @move="$emit('move', $event)"/>
-		<div id="hand" v-if="game">
-			<x-card v-for="(card, i) in game.myHand" :key="card.id"
-				:card="card"
-				:game="game"
-				@click="select(card)"
-				:class="{ selected: selectedHandCard === card.id }"/>
-		</div>
+	<div id="opponent-hand" v-if="game">
+		<div v-for="i in game.opponentHandCount" :key="i"></div>
+	</div>
+	<div class="field">
+		<x-field v-if="game" :game="game" :my="myPlayerNumber" @play="play" @move="$emit('move', $event)"/>
+	</div>
+	<div id="hand" v-if="game">
+		<x-card v-for="card in game.myHand" :key="card.id"
+			:card="card"
+			:game="game"
+			@click="select(card)"
+			:class="{ selected: selectedHandCard === card.id }"/>
 	</div>
 	<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
 	<button v-if="isMyTurn" @click="turnEnd()">ターンエンド</button>
@@ -186,6 +186,11 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 #game
 	text-align center
+	overflow hidden
+
+	> .field
+		perspective 1000px
+		transform-style preserve-3d
 
 #opponent-hand
 	text-align center

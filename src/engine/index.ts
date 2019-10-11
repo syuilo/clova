@@ -38,6 +38,7 @@ export type Card = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
+	power: number;
 	onBeforeDestroy?: (() => void) | null | undefined;
 	onDestroyed?: (() => void) | null | undefined;
 };
@@ -137,6 +138,26 @@ export class Game {
 		return cards; // TODO
 	}
 
+	public findUnitPosition(card: Card): [keyof Field, number] | null {
+		const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === card.id);
+		const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === card.id);
+		const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === card.id);
+		if (posBack1 > -1) return ['back1', posBack1];
+		if (posBack2 > -1) return ['back2', posBack2];
+		if (posFront > -1) return ['front', posFront];
+		return null;
+	}
+
+	public findUnit(cardId: Card['id']): Card | null {
+		const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+		const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+		const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+		if (posBack1 > -1) return (this.state.field.back1[posBack1] as UnitCell).card;
+		if (posBack2 > -1) return (this.state.field.back2[posBack2] as UnitCell).card;
+		if (posFront > -1) return (this.state.field.front[posFront] as UnitCell).card;
+		return null;
+	}
+
 	public async start() {
 		const deck1 = this.shuffle(this.state.player1.deck);
 		const deck2 = this.shuffle(this.state.player2.deck);
@@ -200,6 +221,7 @@ export class Game {
 		let ended = false;
 		while (!ended) {
 			const movedCards: Card['id'][] = [];
+			const attackedCards: Card['id'][] = [];
 			const action = await this.io.q(this.turn, 'mainPhase');
 
 			switch (action.type) {
@@ -227,22 +249,40 @@ export class Game {
 					const cardId = action.payload.card;
 					const index = action.payload.index;
 	
-					let card: Card | null = null;
-					const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === cardId);
-					const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
-					const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
-					if (posBack1 > -1) card = (this.state.field.back1[posBack1] as UnitCell).card;
-					if (posBack2 > -1) card = (this.state.field.back2[posBack2] as UnitCell).card;
-					if (posFront > -1) card = (this.state.field.front[posFront] as UnitCell).card;
+					const card = this.findUnit(cardId);
 					if (card === null) throw new Error('no such card');
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
 					if (movedCards.includes(card.id)) throw new Error('the card is already moved in this turn');
-
+					const pos = this.findUnitPosition(card)!;
 					this.state.field.front[index] = { type: 'unit', card: card };
-					if (posBack1 > -1) this.state.field.back1[posBack1] = { type: 'empty' };
-					if (posBack2 > -1) this.state.field.back2[posBack2] = { type: 'empty' };
-					if (posFront > -1) this.state.field.front[posFront] = { type: 'empty' };
+					this.state.field[pos[0]][pos[1]] = { type: 'empty' };
 					movedCards.push(card.id);
+					break;
+				}
+
+				// ユニットへ攻撃
+				case 'attack': {
+					const cardId = action.payload.card;
+					const targetId = action.payload.target;
+	
+					const attacker = this.findUnit(cardId);
+					if (attacker === null) throw new Error('no such attacker');
+					if (attacker.owner !== this.turn) throw new Error('the attacker is not yours');
+					if (attackedCards.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
+					const attackee = this.findUnit(targetId);
+					if (attackee === null) throw new Error('no such attackee');
+					if (attackee.owner === this.turn) throw new Error('the attackee is yours');
+
+					attackedCards.push(attacker.id);
+
+					// Battle
+					const attackerPower = attacker!.power;
+					const attackeePower = attackee!.power;
+					attackee!.power -= attackerPower;
+					attacker!.power -= attackeePower;
+					if (attacker!.power <= 0) this.destroy(attacker!);
+					if (attackee!.power <= 0) this.destroy(attackee!);
+
 					break;
 				}
 	
@@ -258,6 +298,12 @@ export class Game {
 		}
 	
 		this.mainPhase();
+	}
+
+	public destroy(unit: Card) {
+		const pos = this.findUnitPosition(unit);
+		if (pos === null) throw new Error('no such unit');
+		this.state.field[pos[0]][pos[1]] = { type: 'empty' };
 	}
 
 	public draw(player: number): Card | null {
