@@ -62,7 +62,6 @@ export default Vue.extend({
 	background-size cover
 	background-position center center
 	padding 16px 0
-	margin -60px 0 16px 0
 	transform rotateX(45deg)
 	$margin = 16px
 

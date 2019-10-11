@@ -191,15 +191,19 @@ export default Vue.extend({
 	> .field
 		perspective 1000px
 		transform-style preserve-3d
+		margin -120px 0 -60px 0
 
 #opponent-hand
 	text-align center
+	transform scale(0.7)
 
 	> div
 		display inline-block
+		vertical-align top
 		width 120px
 		height 165px
-		border solid 2px #777
+		margin 0 4px
+		background rgba(255, 255, 255, 0.07)
 		border-radius 8px
 
 #hand

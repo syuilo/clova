@@ -272,6 +272,9 @@ export class Game {
 					const attackee = this.findUnit(targetId);
 					if (attackee === null) throw new Error('no such attackee');
 					if (attackee.owner === this.turn) throw new Error('the attackee is yours');
+					const attackerPos = this.findUnitPosition(attacker)!;
+					const attackeePos = this.findUnitPosition(attackee)!;
+					// TODO: validate position
 
 					attackedCards.push(attacker.id);
 
@@ -300,6 +303,9 @@ export class Game {
 		this.mainPhase();
 	}
 
+	/**
+	 * Destroy a unit
+	 */
 	public destroy(unit: Card) {
 		const pos = this.findUnitPosition(unit);
 		if (pos === null) throw new Error('no such unit');
