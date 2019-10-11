@@ -2,6 +2,7 @@
 <div class="card" @click="$emit('click', card)" :class="def.type">
 	<header>{{ def.name }}</header>
 	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
+	<div class="defender" v-if="def.type === 'unit' && card.skills.includes('defender')"><fa :icon="faShieldAlt"/></div>
 	<div class="cost">{{ def.cost }}</div>
 	<div class="power" v-if="def.type === 'unit'" :class="{ inc: card.power > def.power, dec: card.power < def.power }">{{ card.power }}</div>
 </div>
@@ -9,6 +10,7 @@
 
 <script>
 import Vue from 'vue';
+import { faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 import { CARDS } from '../cards';
 
 export default Vue.extend({
@@ -25,13 +27,18 @@ export default Vue.extend({
 
 	data() {
 		return {
-			def: CARDS.find(x => x.id === this.card.def)
+			def: CARDS.find(x => x.id === this.card.def),
+			faShieldAlt
 		};
 	},
 });
 </script>
 
 <style lang="stylus" scoped>
+@keyframes blink {
+	5% { opacity: 0.0; }
+}
+
 .card
 	display inline-block
 	vertical-align bottom
@@ -65,6 +72,9 @@ export default Vue.extend({
 		background-size contain
 		background-position center center
 		background-repeat no-repeat
+
+	> .defender
+		animation blink 1s ease infinite
 
 	> .cost
 		position absolute

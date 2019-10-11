@@ -88,11 +88,12 @@ const ENERGY_MAX = 10;
 
 export class Game {
 	private cards: CardDef[];
-	public io: Controller;
+	public controller: Controller;
 	public state: State;
 	private rng: seedrandom.prng;
 	public destroyHandlers: Record<string, Function> = {};
 	private energyCharge = 3;
+	private logs: { type: string; payload: any; }[] = [];
 
 	constructor(cards: Game['cards'], player1Deck: string[], player2Deck: string[], controller: Controller, seed: any) {
 		const empty = () => ({
@@ -154,7 +155,7 @@ export class Game {
 		};
 
 		this.cards = cards;
-		this.io = controller;
+		this.controller = controller;
 		this.rng = seedrandom(seed);
 	}
 
@@ -200,6 +201,16 @@ export class Game {
 		return cards;
 	}
 
+	private q(player: number, type: string, payload: any) {
+		const logs = this.logs;
+		this.logs = [];
+		return this.controller.q(player, type, payload, logs);
+	}
+
+	private pushLog(type: string, payload: any) {
+		this.logs.push({ type, payload });
+	}
+
 	private randomPick(cards: Card[]): Card {
 		return cards; // TODO
 	}
@@ -232,8 +243,8 @@ export class Game {
 		let player2Cards = [deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!];
 
 		const [player1redraw, player2redraw] = await Promise.all([
-			this.io.q(0, 'choiceRedrawCards', player1Cards),
-			this.io.q(1, 'choiceRedrawCards', player2Cards),
+			this.q(0, 'choiceRedrawCards', player1Cards),
+			this.q(1, 'choiceRedrawCards', player2Cards),
 		]);
 
 		// TODO: validate param
@@ -272,7 +283,7 @@ export class Game {
 
 		const api: API = {
 			cardChoice: async (player, cards) => {
-				const chosen = await this.io.q(player, 'cardChoice', cards);
+				const chosen = await this.q(player, 'cardChoice', cards);
 				const card = cards.find(c => c.id === chosen);
 				if (card == null) throw new Error('no such card');
 				return card;
@@ -296,7 +307,7 @@ export class Game {
 
 		let ended = false;
 		while (!ended) {
-			const action = await this.io.q(this.turn, 'mainPhase');
+			const action = await this.q(this.turn, 'mainPhase', null);
 			switch (action.type) {
 				// カード使用
 				case 'play': {
@@ -332,6 +343,7 @@ export class Game {
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
 					if (movedUnits.includes(card.id)) throw new Error('the card is already moved in this turn');
 					if (playedUnits.includes(card.id) && !card.skills.includes('quick')) throw new Error('you can not move unit that played in this turn');
+					if (this.state.field.front[index].type !== 'empty') throw new Error('there is a unit');
 					const pos = this.findUnitPosition(card)!;
 					this.state.field.front[index] = { type: 'unit', card: card };
 					this.state.field[pos[0]][pos[1]] = { type: 'empty' };
@@ -356,6 +368,13 @@ export class Game {
 					const attackeePos = this.findUnitPosition(attackee)!;
 					// TODO: validate position
 
+					// Check defender
+					if (!attackee.skills.includes('defender')) {
+						if (attackeePos[0] === 'back1' && this.state.field.back1.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
+						if (attackeePos[0] === 'back2' && this.state.field.back2.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
+						if (attackeePos[0] === 'front' && this.state.field.front.some(x => x.type === 'unit' && x.card.skills.includes('defender') && x.card.owner !== this.turn)) throw new Error('there is a defender');
+					}
+
 					attackedUnits.push(attacker.id);
 
 					// Battle
@@ -379,6 +398,9 @@ export class Game {
 					if (attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
 					const attackerPos = this.findUnitPosition(attacker)!;
 					// TODO: validate position
+
+					// Check defender
+					if (this.state.field[this.turn === 0 ? 'back2' : 'back1'].some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
 
 					attackedUnits.push(attacker.id);
 

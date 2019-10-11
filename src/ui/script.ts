@@ -1,5 +1,8 @@
 import Vue from 'vue';
 import App from './app.vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+Vue.component('fa', FontAwesomeIcon);
 
 const v = new Vue({
 	render: h => h(App),

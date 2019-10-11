@@ -25,20 +25,22 @@ const matchings: Record<string, { name: string; deck: string[]; ws: WebSocket }>
 function createGame(player1Deck: string[], player2Deck: string[], player1ws: WebSocket, player2ws: WebSocket): Game {
 	let game: Game;
 
-	const controller = new Controller((player, type, payload) => {
+	const controller = new Controller((player, type, payload, logs) => {
 		(player === 0 ? player1ws : player2ws).send(JSON.stringify({
 			type: 'q',
 			payload: {
 				type: type,
 				payload: payload,
-				game: game.getStateForClient(player)
+				game: game.getStateForClient(player),
+				logs: logs,
 			}
 		}));
 
 		(player === 0 ? player2ws : player1ws).send(JSON.stringify({
 			type: 'info',
 			payload: {
-				game: game.getStateForClient(player === 0 ? 1 : 0)
+				game: game.getStateForClient(player === 0 ? 1 : 0),
+				logs: logs,
 			}
 		}));
 	});
@@ -110,7 +112,7 @@ wss.on('connection', (ws, req) => {
 				payload: msg.payload,
 			};
 	
-			rooms[roomName].game.io.input(action);
+			rooms[roomName].game.controller.input(action);
 		}
 	});
 });

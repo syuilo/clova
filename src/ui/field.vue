@@ -6,17 +6,17 @@
 		<div id="back2">
 			<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
 				:game="game" :index="i" :my="my" :section="my === 0 ? 'back2' : 'back1'" :selected="selected"
-				@selected="onSelected" @move="own(i)"/>
+				@selected="onSelected($event, my === 0 ? 'back2' : 'back1')" @move="own(i)"/>
 		</div>
 		<div id="front">
 			<x-cell v-for="i in (my === 0 ? [0, 1, 2, 3] : [3, 2, 1, 0])" :key="i"
 				:game="game" :index="i" :my="my" :section="'front'" :selected="selected"
-				@selected="onSelected" @move="move(i)"/>
+				@selected="onSelected($event, 'front')" @move="move(i)"/>
 		</div>
 		<div id="back1">
 			<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
 				:game="game" :index="i" :my="my" :section="my === 0 ? 'back1' : 'back2'" :selected="selected"
-				@selected="onSelected" @move="play(i)"/>
+				@selected="onSelected($event, my === 0 ? 'back1' : 'back2')" @move="play(i)"/>
 		</div>
 	</div>
 	<div class="deck my">{{ game.myDeck.length.toString().padStart(2, '0') }}</div>
@@ -69,10 +69,11 @@ export default Vue.extend({
 			this.$emit('move', { card: this.selected.id, index: index });
 		},
 
-		onSelected(card) {
+		onSelected(card, section) {
 			if (this.selected && card.owner !== this.my) {
 				if (this.$parent.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
 				if (this.$parent.playedUnits.includes(this.selected.id) && !this.selected.skills.includes('quick')) return alert('プレイしたターンに攻撃することはできません');
+				if (!card.skills.includes('defender') && this.game.field[section].some(x => x.type === 'unit' && x.card.skills.includes('defender') && x.card.owner !== this.my)) return alert('対象のユニットはディフェンダーに守られています');
 				this.$parent.attackedUnits.push(this.selected.id);
 				this.$emit('attack', { card: this.selected.id, target: card.id });
 			} else {
@@ -83,6 +84,7 @@ export default Vue.extend({
 		directAttack() {
 			if (this.selected == null) return;
 			if (this.$parent.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
+			if (this.game.field[this.my === 0 ? 'back2' : 'back1'].some(x => x.type === 'unit' && x.card.skills.includes('defender'))) return alert('相手はディフェンダーに守られています');
 			this.$parent.attackedUnits.push(this.selected.id);
 			this.$emit('directAttack', { card: this.selected.id });
 		}

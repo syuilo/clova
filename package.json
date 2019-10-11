@@ -10,6 +10,10 @@
 		"build": "npm run build-server && npm run build-client"
 	},
 	"dependencies": {
+		"@fortawesome/fontawesome-svg-core": "1.2.25",
+		"@fortawesome/free-regular-svg-icons": "5.11.2",
+		"@fortawesome/free-solid-svg-icons": "5.11.2",
+		"@fortawesome/vue-fontawesome": "0.1.7",
 		"seedrandom": "3.0.5",
 		"vue": "2.6.10",
 		"ws": "7.1.2"

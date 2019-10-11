@@ -16,7 +16,7 @@ export class Controller {
 	private logs: Log[] = [];
 	private queue: Log[] = [];
 	private onInput: (((log: Log) => Promise<boolean>) | null)[] = [];
-	private inputRequest: (player: number, type: string, payload: any) => void;
+	private inputRequest: (player: number, type: string, payload: any, logs: any[]) => void;
 	private notAcceptedLogs: Log[] = [];
 
 	constructor(inputRequest: Controller['inputRequest'], queue?: Log[]) {
@@ -29,7 +29,7 @@ export class Controller {
 		return this.onInput[action.player]!(action);
 	}
 
-	public q(player: number, type: string, payload?: any): Promise<any> {
+	public q(player: number, type: string, payload: any, logs: any[]): Promise<any> {
 		if (this.notAcceptedLogs) this.notAcceptedLogs = this.logs.concat(this.notAcceptedLogs);
 		return new Promise(res => {
 			if (this.queue.filter(log => log.player === player).length === 0) {
@@ -40,7 +40,7 @@ export class Controller {
 					this.notAcceptedLogs.push(log);
 				});
 				console.log('-> WAITING INPUT...', player, type, payload);
-				this.inputRequest(player, type, payload);
+				this.inputRequest(player, type, payload, logs);
 			} else {
 				const log = this.queue.find(log => log.player === player);
 				this.queue = this.queue.filter(_log => _log !== log);
