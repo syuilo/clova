@@ -1,13 +1,19 @@
 <template>
 <div id="field">
 	<div id="back2">
-		<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i" :game="game" :index="i" :my="my" :section="my === 0 ? 'back2' : 'back1'" @selected="selected = $event" :selected="selected" @move="own(i)"/>
+		<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
+			:game="game" :index="i" :my="my" :section="my === 0 ? 'back2' : 'back1'" :selected="selected"
+			@selected="selected = $event" @move="own(i)"/>
 	</div>
 	<div id="front">
-		<x-cell v-for="i in (my === 0 ? [0, 1, 2, 3] : [3, 2, 1, 0])" :key="i" :game="game" :index="i" :my="my" :section="'front'" @selected="selected = $event" :selected="selected" @move="move(i)"/>
+		<x-cell v-for="i in (my === 0 ? [0, 1, 2, 3] : [3, 2, 1, 0])" :key="i"
+			:game="game" :index="i" :my="my" :section="'front'" :selected="selected"
+			@selected="selected = $event" @move="move(i)"/>
 	</div>
 	<div id="back1">
-		<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i" :game="game" :index="i" :my="my" :section="my === 0 ? 'back1' : 'back2'" @selected="selected = $event" :selected="selected" @move="play(i)"/>
+		<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
+			:game="game" :index="i" :my="my" :section="my === 0 ? 'back1' : 'back2'" :selected="selected"
+			@selected="selected = $event" @move="play(i)"/>
 	</div>
 </div>
 </template>

@@ -42,11 +42,11 @@ export default Vue.extend({
 	overflow hidden
 
 	&.spell
-		background #352134
+		background rgba(61, 43, 70, 0.5)
 
 	&.unit
 		border-radius 32px 32px 8px 8px
-		background #21352c
+		background rgba(0, 0, 0, 0.5)
 
 	> *
 		pointer-events none
