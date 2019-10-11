@@ -17,10 +17,10 @@
 				@selected="onSelected" @move="play(i)"/>
 		</div>
 	</div>
-	<div class="life my">{{ game.myLife }}</div>
-	<div class="life opponent">{{ game.opponentLife }}</div>
-	<div class="energy my">{{ game.myEnergy }}</div>
-	<div class="energy opponent">{{ game.opponentEnergy }}</div>
+	<div class="life my">{{ game.myLife.toString().padStart(2, '0') }}</div>
+	<div class="life opponent">{{ game.opponentLife.toString().padStart(2, '0') }}</div>
+	<div class="energy my">{{ game.myEnergy.toString().padStart(2, '0') }}</div>
+	<div class="energy opponent">{{ game.opponentEnergy.toString().padStart(2, '0') }}</div>
 </div>
 </template>
 
