@@ -232,16 +232,16 @@ export class Game {
 					const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
 					const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
 					if (posBack1 > -1) card = (this.state.field.back1[posBack1] as UnitCell).card;
-					if (posBack2 > -1) card = (this.state.field.back1[posBack2] as UnitCell).card;
-					if (posFront > -1) card = (this.state.field.back1[posFront] as UnitCell).card;
+					if (posBack2 > -1) card = (this.state.field.back2[posBack2] as UnitCell).card;
+					if (posFront > -1) card = (this.state.field.front[posFront] as UnitCell).card;
 					if (card === null) throw new Error('no such card');
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
 					if (movedCards.includes(card.id)) throw new Error('the card is already moved in this turn');
 
 					this.state.field.front[index] = { type: 'unit', card: card };
 					if (posBack1 > -1) this.state.field.back1[posBack1] = { type: 'empty' };
-					if (posBack2 > -1) this.state.field.back1[posBack2] = { type: 'empty' };
-					if (posFront > -1) this.state.field.back1[posFront] = { type: 'empty' };
+					if (posBack2 > -1) this.state.field.back2[posBack2] = { type: 'empty' };
+					if (posFront > -1) this.state.field.front[posFront] = { type: 'empty' };
 					movedCards.push(card.id);
 					break;
 				}

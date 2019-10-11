@@ -1,5 +1,5 @@
 <template>
-<div class="card" @click="$emit('click')" :class="def.type">
+<div class="card" @click="$emit('click', card)" :class="def.type">
 	<header>{{ def.name }}</header>
 	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
 	<div class="cost">{{ def.cost }}</div>
@@ -34,15 +34,19 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 .card
 	display inline-block
+	vertical-align bottom
 	width 120px
 	height 165px
 	border solid 2px #777
 	border-radius 8px
-	background #fff
 	overflow hidden
+
+	&.spell
+		background #352134
 
 	&.unit
 		border-radius 32px 32px 8px 8px
+		background #21352c
 
 	> *
 		pointer-events none

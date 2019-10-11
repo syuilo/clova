@@ -5,29 +5,11 @@
 		<div id="opponent-hand" v-if="game">
 			<div v-for="i in game.opponentHandCount" :key="i"></div>
 		</div>
-		<div id="field" v-if="game">
-			<div id="back2">
-				<div><x-card v-if="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][0].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][0].card" :game="game"/></div>
-				<div><x-card v-if="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][1].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][1].card" :game="game"/></div>
-				<div><x-card v-if="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][2].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back2' : 'back1'][2].card" :game="game"/></div>
-			</div>
-			<div id="front">
-				<div></div>
-				<div></div>
-				<div></div>
-				<div></div>
-			</div>
-			<div id="back1">
-				<div @click="play(0)"><x-card v-if="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][0].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][0].card" :game="game"/></div>
-				<div @click="play(1)"><x-card v-if="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][1].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][1].card" :game="game"/></div>
-				<div @click="play(2)"><x-card v-if="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][2].type === 'unit'" :card="game.field[myPlayerNumber === 0 ? 'back1' : 'back2'][2].card" :game="game"/></div>
-			</div>
-		</div>
+		<x-field id="field" v-if="game" :game="game" :my="myPlayerNumber" @play="play" @move="$emit('move', $event)"/>
 		<div id="hand" v-if="game">
 			<x-card v-for="(card, i) in game.myHand" :key="card.id"
 				:card="card"
 				:game="game"
-				:style="{ transform: `translateZ(${i * 4}px)` }"
 				@click="select(card)"
 				:class="{ selected: selectedHandCard === card.id }"/>
 		</div>
@@ -42,6 +24,7 @@ import Vue from 'vue';
 import XCard from './card.vue';
 import XRedrawDialog from './redraw-dialog.vue';
 import XCardChoiceDialog from './card-choice-dialog.vue';
+import XField from './field.vue';
 import { CARDS } from '../cards';
 import TreasureChest from '../cards/treasure-chest';
 import slime from '../cards/slime';
@@ -56,20 +39,21 @@ type Game = ClientState;
 
 export default Vue.extend({
 	components: {
-		XCard
+		XCard, XField
 	},
 
 	data() {
 		return {
 			game: null as Game | null,
 			myPlayerNumber: null as null | number,
-			selectedHandCard: null
+			selectedHandCard: null,
+			selectedFieldCard: null,
 		};
 	},
 
 	computed: {
 		isMyTurn(): boolean {
-			return this.game.turn === this.myPlayerNumber;
+			return this.game && (this.game.turn === this.myPlayerNumber);
 		}
 	},
 
@@ -152,6 +136,11 @@ export default Vue.extend({
 					res({ type: 'play', payload });
 				});
 
+				this.$once('move', payload => {
+					this.selectedFieldCard = null;
+					res({ type: 'move', payload });
+				});
+
 				this.$once('turnEnd', () => {
 					this.selectedHandCard = null;
 					res({ type: 'end' });
@@ -162,7 +151,7 @@ export default Vue.extend({
 		select(card) {
 			this.selectedHandCard = card.id;
 		},
-		
+
 		play(index) {
 			this.$emit('play', { card: this.selectedHandCard, index: index });
 		},
@@ -197,18 +186,9 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 #game
 	text-align center
-	perspective 2000px
-	transform-style preserve-3d
-
-	> div
-		perspective 2000px
-		transform-style preserve-3d
-		transform rotateX(50deg)
 
 #opponent-hand
 	text-align center
-	perspective 2000px
-	transform rotateX(-50deg)
 
 	> div
 		display inline-block
@@ -218,40 +198,13 @@ export default Vue.extend({
 		border-radius 8px
 
 #hand
-	perspective 2000px
-	transform rotateX(-50deg)
 	text-align center
 
 	> *
 		position relative
-		//margin 0 -8px
+		margin 0 4px
 
 		&.selected
 			box-shadow 0 0 8px #0f0
 
-#field
-	> div
-		text-align center
-
-		> div
-			display inline-block
-			width 120px
-			height 165px
-			margin 8px
-			border solid 2px #b7b7b7
-			border-radius 8px
-			backdrop-filter blur(4px)
-			perspective 2000px
-			transform-style preserve-3d
-
-			> *
-				position absolute
-				top 0
-				left 0
-
-		&#back1 > div
-			border-color #a4c5d8
-
-		&#back2 > div
-			border-color #d8a4ae
 </style>
