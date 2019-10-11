@@ -1,6 +1,8 @@
 <template>
 <div id="game">
-	<p v-if="isMyTurn">あなたのターンです</p>
+	<header>
+		<p v-if="isMyTurn">あなたのターンです</p>
+	</header>
 	<div id="opponent-hand" v-if="game">
 		<div v-for="i in game.opponentHandCount" :key="i"></div>
 	</div>
@@ -14,8 +16,10 @@
 			@click="select(card)"
 			:class="{ selected: selectedHandCard === card.id }"/>
 	</div>
-	<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
-	<button v-if="isMyTurn" @click="turnEnd()">ターンエンド</button>
+	<div>
+		<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
+		<button v-if="isMyTurn" @click="turnEnd()">ターンエンド</button>
+	</div>
 </div>
 </template>
 
@@ -188,10 +192,16 @@ export default Vue.extend({
 	text-align center
 	overflow hidden
 
+	> header
+		position fixed
+		top 0
+		left 0
+		width 100%
+
 	> .field
 		perspective 1000px
 		transform-style preserve-3d
-		margin -120px 0 -60px 0
+		margin -130px 0 -70px 0
 
 #opponent-hand
 	text-align center
@@ -207,7 +217,13 @@ export default Vue.extend({
 		border-radius 8px
 
 #hand
+	display inline-block
 	text-align center
+	position relative
+	background rgba(0, 0, 0, 0.5)
+	border-radius 16px
+	backdrop-filter blur(6px)
+	padding 16px
 
 	> *
 		position relative

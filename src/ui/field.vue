@@ -61,7 +61,7 @@ export default Vue.extend({
 	background-image url('file:///C:/Users/ai/Pictures/inspire/2015-12-05_00022.jpg')
 	background-size cover
 	background-position center center
-	padding 16px 0
+	padding 32px 0
 	transform rotateX(45deg)
 	$margin = 16px
 
