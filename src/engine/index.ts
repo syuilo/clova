@@ -9,7 +9,7 @@ type EmptyCell = {
 
 type UnitCell = {
 	type: 'unit';
-	card: Card;
+	card: UnitCard;
 };
 
 type Field = {
@@ -35,19 +35,28 @@ export type CardDef = {
 	action: (game: Game, thisCard: Card, api: API) => Promise<void>;
 });
 
-export type Card = {
+type SpellCard = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
-	power?: number;
+};
+
+type UnitCard = {
+	def: CardDef['id'];
+	id: string;
+	owner: number;
+	power: number;
 	onBeforeDestroy?: (() => void) | null | undefined;
 	onDestroyed?: (() => void) | null | undefined;
 };
+
+export type Card = UnitCard | SpellCard;
 
 type Player = {
 	deck: Card[];
 	hand: Card[];
 	energy: number;
+	life: number;
 }
 
 type State = {
@@ -63,6 +72,10 @@ export type ClientState = {
 	opponentDeckCount: number;
 	myHand: Card[];
 	myDeck: Card[];
+	myLife: number;
+	opponentLife: number;
+	myEnergy: number;
+	opponentEnergy: number;
 	field: Field;
 	turn: number;
 };
@@ -94,7 +107,8 @@ export class Game {
 				};
 			}),
 			hand: [],
-			energy: 3
+			energy: 3,
+			life: 20
 		};
 
 		const player2 = {
@@ -111,7 +125,8 @@ export class Game {
 				};
 			}),
 			hand: [],
-			energy: 3
+			energy: 3,
+			life: 20
 		};
 
 		this.state = {
@@ -145,6 +160,10 @@ export class Game {
 			opponentDeckCount: player === 0 ? this.state.player2.deck.length : this.state.player1.deck.length,
 			myHand: player === 0 ? this.state.player1.hand : this.state.player2.hand,
 			myDeck: player === 0 ? this.state.player1.deck : this.state.player2.deck,
+			myLife: player === 0 ? this.state.player1.life : this.state.player2.life,
+			opponentLife: player === 0 ? this.state.player2.life : this.state.player1.life,
+			myEnergy: player === 0 ? this.state.player1.energy : this.state.player2.energy,
+			opponentEnergy: player === 0 ? this.state.player2.energy : this.state.player1.energy,
 			field: this.state.field,
 			turn: this.turn,
 		};
@@ -181,7 +200,7 @@ export class Game {
 		return null;
 	}
 
-	public findUnit(cardId: Card['id']): Card | null {
+	public findUnit(cardId: Card['id']): UnitCard | null {
 		const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === cardId);
 		const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
 		const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
@@ -251,6 +270,10 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
+		this.player.energy++;
+		const drawed = this.draw(this.turn);
+		if (drawed == null) return;
+
 		let ended = false;
 		while (!ended) {
 			const movedCards: Card['id'][] = [];
@@ -263,13 +286,17 @@ export class Game {
 					const cardId = action.payload.card;
 					const card = this.player.hand.find(c => c.id === cardId);
 					if (card == null) throw new Error('no such card');
-	
+					const cardDef = this.lookupCard(card);
+					if (this.player.energy < cardDef.cost) throw new Error('no enough energy');
+
+					// エネルギー消費
+					this.player.energy -= cardDef.cost;
+
 					// 手札から抜く
 					this.player.hand = this.player.hand.filter(c => c.id !== cardId);
 	
-					const cardDef = this.lookupCard(card);
 					if (cardDef.type === 'unit') {
-						this.summon(card, action.payload.index);
+						this.summon(card as UnitCard, action.payload.index);
 					} else if (cardDef.type === 'spell') {
 						await this.useSpell(card);
 					}
@@ -363,19 +390,11 @@ export class Game {
 		}
 	}
 
-	public summon(card: Card, index: number) {
-		const def = this.lookupCard(card);
-/*
-		if (this.players[card.owner].energy < def.cost) {
-			throw new Error('no energy');
-		}
-
-		this.players[card.owner].energy -= def.cost;
-*/
+	public summon(card: UnitCard, index: number) {
 		this.setUnit(card, this.state.turn === 0 ? 'back1' : 'back2', index);
 	}
 
-	public setUnit(card: Card, section: keyof State['field'], index: number) {
+	public setUnit(card: UnitCard, section: keyof State['field'], index: number) {
 		const def = this.lookupCard(card);
 
 		if (this.state.field[section][index].type === 'empty') {

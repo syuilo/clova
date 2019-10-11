@@ -5,7 +5,7 @@ export default {
 	name: 'ドラゴン',
 	image: 'https://4.bp.blogspot.com/-t0TdfnnfnH0/UT10GYML1QI/AAAAAAAAOrY/qNLEwXbzl-0/s1600/fantasy_dragon.png',
 	type: 'unit' as const,
-	power: 1500,
+	power: 8,
 	cost: 8,
 	setup: async (game, thisCard) => {
 	}

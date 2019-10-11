@@ -5,7 +5,7 @@ export default {
 	name: '魔法使い',
 	image: 'https://2.bp.blogspot.com/-9E31gBPeGKI/U00KHPHLXqI/AAAAAAAAfOg/VfOxsQp8w-8/s800/majo_girl_majokko.png',
 	type: 'unit' as const,
-	power: 500,
+	power: 2,
 	cost: 5,
 	setup: async (game, thisCard) => {
 	}

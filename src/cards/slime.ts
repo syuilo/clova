@@ -5,7 +5,7 @@ export default {
 	name: 'スライム',
 	image: 'https://1.bp.blogspot.com/-DSgUUXrWoFw/XVKfz2Z_3XI/AAAAAAABUEs/a9QCrDh18-grpZCL0O_pD7r4KWC921gawCLcBGAs/s400/fantasy_game_character_slime.png',
 	type: 'unit' as const,
-	power: 100,
+	power: 1,
 	cost: 1,
 	setup: async (game, thisCard) => {
 	}

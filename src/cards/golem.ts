@@ -5,7 +5,7 @@ export default {
 	name: 'ゴーレム',
 	image: 'https://3.bp.blogspot.com/-ZWsv1eBwP-8/XDXcFKGXH2I/AAAAAAABRGs/bAVhn3sVs2wkaFSaeTzvwdAD3CuS47ZUACLcBGAs/s800/fantasy_golem.png',
 	type: 'unit' as const,
-	power: 800,
+	power: 3,
 	cost: 5,
 	setup: async (game, thisCard) => {
 	}
