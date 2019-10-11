@@ -3,7 +3,7 @@
 	<header>{{ def.name }}</header>
 	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
 	<div class="cost">{{ def.cost }}</div>
-	<div class="power" v-if="def.type === 'unit'">{{ card.power }}</div>
+	<div class="power" v-if="def.type === 'unit'" :class="{ inc: card.power > def.power, dec: card.power < def.power }">{{ card.power }}</div>
 </div>
 </template>
 
@@ -40,6 +40,7 @@ export default Vue.extend({
 	height 165px
 	border-radius 8px
 	overflow hidden
+	font-weight bold
 
 	&.spell
 		background rgba(61, 43, 70, 0.5)
@@ -82,5 +83,11 @@ export default Vue.extend({
 		border-right solid 2px #777
 		border-radius 0 8px 0 0
 		padding 0 4px
+
+		&.inc
+			color #0ff
+
+		&.dec
+			color #f00
 
 </style>

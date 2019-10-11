@@ -21,8 +21,8 @@
 	</div>
 	<div>
 		<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
-		<button v-if="isMyTurn" @click="turnEnd()">ターンエンド</button>
 	</div>
+	<button v-if="isMyTurn" id="end" @click="turnEnd()">ターンエンド</button>
 </div>
 </template>
 
@@ -239,5 +239,10 @@ export default Vue.extend({
 
 		&.selected
 			box-shadow 0 0 8px #0f0
+
+#end
+	position fixed
+	bottom 16px
+	right 16px
 
 </style>
