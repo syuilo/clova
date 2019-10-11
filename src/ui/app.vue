@@ -7,7 +7,10 @@
 		<div v-for="i in game.opponentHandCount" :key="i"></div>
 	</div>
 	<div class="field">
-		<x-field v-if="game" :game="game" :my="myPlayerNumber" @play="play" @move="$emit('move', $event)"/>
+		<x-field v-if="game" :game="game" :my="myPlayerNumber"
+			@play="play"
+			@move="$emit('move', $event)"
+			@attack="$emit('attack', $event)"/>
 	</div>
 	<div id="hand" v-if="game">
 		<x-card v-for="card in game.myHand" :key="card.id"
@@ -143,6 +146,10 @@ export default Vue.extend({
 				this.$once('move', payload => {
 					this.selectedFieldCard = null;
 					res({ type: 'move', payload });
+				});
+
+				this.$once('attack', payload => {
+					res({ type: 'attack', payload });
 				});
 
 				this.$once('turnEnd', () => {

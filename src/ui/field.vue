@@ -3,17 +3,17 @@
 	<div id="back2">
 		<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
 			:game="game" :index="i" :my="my" :section="my === 0 ? 'back2' : 'back1'" :selected="selected"
-			@selected="selected = $event" @move="own(i)"/>
+			@selected="onSelected" @move="own(i)"/>
 	</div>
 	<div id="front">
 		<x-cell v-for="i in (my === 0 ? [0, 1, 2, 3] : [3, 2, 1, 0])" :key="i"
 			:game="game" :index="i" :my="my" :section="'front'" :selected="selected"
-			@selected="selected = $event" @move="move(i)"/>
+			@selected="onSelected" @move="move(i)"/>
 	</div>
 	<div id="back1">
 		<x-cell v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i"
 			:game="game" :index="i" :my="my" :section="my === 0 ? 'back1' : 'back2'" :selected="selected"
-			@selected="selected = $event" @move="play(i)"/>
+			@selected="onSelected" @move="play(i)"/>
 	</div>
 </div>
 </template>
@@ -54,9 +54,16 @@ export default Vue.extend({
 		},
 
 		move(index) {
-			console.log(index);
 			this.$emit('move', { card: this.selected.id, index: index });
 		},
+
+		onSelected(card) {
+			if (this.selected && card.owner !== this.my) {
+				this.$emit('attack', { card: this.selected.id, target: card.id });
+			} else {
+				this.selected = card;
+			}
+		}
 	}
 });
 </script>

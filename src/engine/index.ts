@@ -28,6 +28,7 @@ export type CardDef = {
 	cost: number;
 } & ({
 	type: 'unit';
+	power: number;
 	setup: (game: Game, thisCard: Card, api: API) => Promise<void>;
 } | {
 	type: 'spell';
@@ -38,19 +39,15 @@ export type Card = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
-	power: number;
+	power?: number;
 	onBeforeDestroy?: (() => void) | null | undefined;
 	onDestroyed?: (() => void) | null | undefined;
 };
 
-export class Player {
-	public deck: Card[];
-	public hand: Card[] = [];
-	public energy: number = 3;
-
-	constructor(deck: Player['deck']) {
-		this.deck = deck;
-	}
+type Player = {
+	deck: Card[];
+	hand: Card[];
+	energy: number;
 }
 
 type State = {
@@ -76,10 +73,46 @@ export class Game {
 	public state: State;
 	private rng: seedrandom.prng;
 
-	constructor(cards: Game['cards'], player1: Player, player2: Player, controller: Controller, seed: any) {
+	constructor(cards: Game['cards'], player1Deck: string[], player2Deck: string[], controller: Controller, seed: any) {
 		const empty = () => ({
 			type: 'empty' as const
 		});
+
+		let cardId = 0;
+
+		const player1 = {
+			deck: player1Deck.map(id => {
+				const def = cards.find(x => x.id === id)!;
+				cardId++;
+				return {
+					def: id,
+					id: cardId.toString(),
+					owner: 0,
+					...(def.type === 'unit' ? {
+						power: def.power
+					} : {})
+				};
+			}),
+			hand: [],
+			energy: 3
+		};
+
+		const player2 = {
+			deck: player2Deck.map(id => {
+				const def = cards.find(x => x.id === id)!;
+				cardId++;
+				return {
+					def: id,
+					id: cardId.toString(),
+					owner: 1,
+					...(def.type === 'unit' ? {
+						power: def.power
+					} : {})
+				};
+			}),
+			hand: [],
+			energy: 3
+		};
 
 		this.state = {
 			player1: player1,

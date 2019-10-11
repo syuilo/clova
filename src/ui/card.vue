@@ -3,7 +3,7 @@
 	<header>{{ def.name }}</header>
 	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
 	<div class="cost">{{ def.cost }}</div>
-	<div class="power" v-if="def.type === 'unit'">{{ def.power }}</div>
+	<div class="power" v-if="def.type === 'unit'">{{ card.power }}</div>
 </div>
 </template>
 

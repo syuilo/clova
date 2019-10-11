@@ -23,23 +23,6 @@ const rooms: Record<string, Room> = {};
 const matchings: Record<string, { name: string; deck: string[]; ws: WebSocket }> = {};
 
 function createGame(player1Deck: string[], player2Deck: string[], player1ws: WebSocket, player2ws: WebSocket): Game {
-	let i = 0;
-
-	const player1DeckWithId: Card[] = [];
-	for (const cardId of player1Deck) {
-		player1DeckWithId.push({ def: cardId, id: i.toString(), owner: 0 });
-		i++;
-	}
-
-	const player2DeckWithId: Card[] = [];
-	for (const cardId of player2Deck) {
-		player2DeckWithId.push({ def: cardId, id: i.toString(), owner: 1 });
-		i++;
-	}
-
-	const player1 = new Player(player1DeckWithId);
-	const player2 = new Player(player2DeckWithId);
-
 	let game: Game;
 
 	const controller = new Controller((player, type, payload) => {
@@ -60,7 +43,7 @@ function createGame(player1Deck: string[], player2Deck: string[], player1ws: Web
 		}));
 	});
 
-	game = new Game(CARDS, player1, player2, controller, 'seed');
+	game = new Game(CARDS, player1Deck, player2Deck, controller, 'seed');
 
 	return game;
 }
