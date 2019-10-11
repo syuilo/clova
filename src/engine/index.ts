@@ -80,12 +80,15 @@ export type ClientState = {
 	turn: number;
 };
 
+const ENERGY_MAX = 10;
+
 export class Game {
 	private cards: CardDef[];
 	public io: Controller;
 	public state: State;
 	private rng: seedrandom.prng;
 	public destroyHandlers: Record<string, Function> = {};
+	private energyCharge = 3;
 
 	constructor(cards: Game['cards'], player1Deck: string[], player2Deck: string[], controller: Controller, seed: any) {
 		const empty = () => ({
@@ -271,7 +274,7 @@ export class Game {
 	 * Main phase
 	 */
 	private async mainPhase() {
-		this.player.energy++;
+		this.player.energy = Math.max(this.player.energy, this.energyCharge);
 		const drawed = this.draw(this.turn);
 		if (drawed == null) return;
 
@@ -352,7 +355,6 @@ export class Game {
 	
 				// ターンエンド
 				case 'end': {
-					this.state.turn = this.turn === 0 ? 1 : 0;
 					ended = true;
 					break;
 				}
@@ -360,7 +362,10 @@ export class Game {
 				default: throw new Error('Unknown main phase action: ' + action.type);
 			}
 		}
-	
+
+		const nextTurn = this.turn === 0 ? 1 : 0;
+		this.state.turn = nextTurn;
+		if (nextTurn === 0 && this.energyCharge < ENERGY_MAX) this.energyCharge++;
 		this.mainPhase();
 	}
 
