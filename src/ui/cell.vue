@@ -64,36 +64,40 @@ export default Vue.extend({
 		position absolute
 		width 20px
 		height 20px
-		border-radius 5px
 		pointer-events none
 		opacity 0
 
 		$margin = 10px
 		$thickness = 2px
+		$radius = 9px
 
 		&.a
 			top -($margin)
 			left -($margin)
 			border-top solid $thickness #fff
 			border-left solid $thickness #fff
+			border-radius $radius 0 0 0
 
 		&.b
 			top -($margin)
 			right -($margin)
 			border-top solid $thickness #fff
 			border-right solid $thickness #fff
+			border-radius 0 $radius 0 0
 
 		&.c
 			bottom -($margin)
 			left -($margin)
 			border-bottom solid $thickness #fff
 			border-left solid $thickness #fff
+			border-radius 0 0 0 $radius
 
 		&.d
 			bottom -($margin)
 			right -($margin)
 			border-bottom solid $thickness #fff
 			border-right solid $thickness #fff
+			border-radius 0 0 $radius 0
 
 	&:hover
 		> .cursor
