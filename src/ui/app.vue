@@ -42,8 +42,12 @@ import treasureChest from '../cards/treasure-chest';
 import dragon from '../cards/dragon';
 import witch from '../cards/witch';
 import energyDrink from '../cards/energy-drink';
+import movingHaniwa from '../cards/moving-haniwa';
 import { Card, ClientState } from '../engine';
 import mimic from '../cards/mimic';
+import barrier from '../cards/barrier';
+import cracking from '../cards/cracking';
+import goldenDragon from '../cards/golden-dragon';
 
 type Game = ClientState;
 
@@ -86,6 +90,10 @@ export default Vue.extend({
 				witch.id, witch.id,
 				energyDrink.id, energyDrink.id, energyDrink.id,
 				mimic.id, mimic.id,
+				movingHaniwa.id, movingHaniwa.id, movingHaniwa.id,
+				barrier.id,
+				cracking.id,
+				goldenDragon.id,
 			];
 
 			socket.send(JSON.stringify({
