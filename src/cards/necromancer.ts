@@ -13,5 +13,6 @@ export default {
 		const chosen = await api.cardChoiceFromTrash(game.turn, 'unit', 3) as UnitCard;
 		const index = await api.choiceFieldIndex(game.turn);
 		game.setUnit(chosen, game.turn === 0 ? 'back1' : 'back2', index);
+		game.player.trash = game.player.trash.filter(x => x.id !== chosen.id);
 	}
 } as CardDef;
