@@ -11,7 +11,9 @@
 			<option v-for="card in CARDS" :key="card.id" :value="card.id">{{ card.name }}</option>
 		</select>
 		<button @click="deck.push($refs.cardSelect.value)">追加</button>
-		<div v-for="(card, i) in deck.map(x => CARDS.find(y => y.id === x))" :key="i">{{ card.name }}</div>
+		<div v-for="(card, i) in deck.map(x => CARDS.find(y => y.id === x))" :key="i">
+			{{ card.name }} <button @click="deck = deck.filter((x, j) => j !== i)">x</button>
+		</div>
 	</section>
 	<hr>
 	<section>
