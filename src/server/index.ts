@@ -5,6 +5,7 @@ import * as WebSocket from 'ws';
 import { Game } from '../engine/index';
 import { CARDS } from '../cards';
 import { Controller } from '../engine/controller';
+const config = require('../../config.json');
 
 type Room = {
 	player1: string;
@@ -33,7 +34,7 @@ app
 	.use(router.routes())
 	.use(router.allowedMethods());
 
-app.listen(80, () => {
+app.listen(config.port, () => {
 	console.log('http server started');
 });
 
