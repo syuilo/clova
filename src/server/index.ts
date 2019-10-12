@@ -13,6 +13,7 @@ type Room = {
 	player2ready: boolean;
 	player1ws: WebSocket | null;
 	player2ws: WebSocket | null;
+	started: boolean;
 };
 
 const app = new Koa();
@@ -94,6 +95,7 @@ wss.on('connection', (ws, req) => {
 					player2ready: false,
 					player1ws: null,
 					player2ws: null,
+					started: false,
 				};
 				const game = createGame(matching.deck, msg.deck, rooms[roomId]);
 				games[roomId] = game;
@@ -108,10 +110,15 @@ wss.on('connection', (ws, req) => {
 		});
 	} else {
 		if (rooms[room] == null) return;
-		
+
 		const game = games[room];
 		if (rooms[room].player1 === name) rooms[room].player1ws = ws;
 		if (rooms[room].player2 === name) rooms[room].player2ws = ws;
+
+		ws.send(JSON.stringify({ type: 'game', payload: {
+			game: game.getStateForClient(rooms[room].player1 === name ? 0 : 1),
+			player1: rooms[room].player1
+		}}));
 
 		ws.on('message', async message => {
 			const msg = JSON.parse(message.toString());
@@ -123,18 +130,10 @@ wss.on('connection', (ws, req) => {
 				} else {
 					rooms[room].player2ready = true;
 				}
-				if (rooms[room].player1ready && rooms[room].player2ready) {
+				if (rooms[room].player1ready && rooms[room].player2ready && !rooms[room].started) {
+					rooms[room].started = true;
 					game.start();
-
-					rooms[room].player1ws!.send(JSON.stringify({ type: 'game', payload: {
-						game: game.getStateForClient(0),
-						player1: rooms[room].player1
-					}}));
-
-					rooms[room].player2ws!.send(JSON.stringify({ type: 'game', payload: {
-						game: game.getStateForClient(1),
-						player1: rooms[room].player1
-					}}));
+					console.log('game started');
 				}
 			} else if (msg.type === 'action') {
 				const action = {

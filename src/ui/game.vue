@@ -79,7 +79,7 @@ export default Vue.extend({
 
 	created() {
 		const actions = [];
-
+		const name = localStorage.getItem('name');
 		const room = window.location.search.match(/\?room=(.+?)$/)![1];
 		const socket = new WebSocket(`ws://${window.location.host}:3000/?name=${name}&room=${room}`);
 
@@ -122,12 +122,6 @@ export default Vue.extend({
 					payload: res
 				}));
 			}
-		});
-
-		socket.addEventListener('open', event => {
-			socket.send(JSON.stringify({
-				type: 'ready',
-			}));
 		});
 	},
 
