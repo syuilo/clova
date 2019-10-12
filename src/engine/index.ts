@@ -20,7 +20,7 @@ type Field = {
 
 type API = {
 	cardChoice: (player: number, cards: Card[]) => Promise<Card>;
-	unitChoice: (player: number | null) => Promise<UnitCard>;
+	unitChoice: (player: number, owner: number | null) => Promise<UnitCard>;
 };
 
 export type CardDef = {
@@ -287,7 +287,14 @@ export class Game {
 				const card = cards.find(c => c.id === chosen);
 				if (card == null) throw new Error('no such card');
 				return card;
-			}
+			},
+			unitChoice: async (player, owner) => {
+				const chosen = await this.q(player, 'unitChoice', owner);
+				const card = this.findUnit(chosen);
+				if (card == null) throw new Error('no such card');
+				if (owner !== null && card.owner !== owner) throw new Error('owner not match');
+				return card;
+			},
 		};
 
 		await def.action(this, card, api);

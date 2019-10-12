@@ -33,6 +33,7 @@ import Vue from 'vue';
 import XCard from './card.vue';
 import XRedrawDialog from './redraw-dialog.vue';
 import XCardChoiceDialog from './card-choice-dialog.vue';
+import XUnitChoiceDialog from './unit-choice-dialog.vue';
 import XField from './field.vue';
 import { CARDS } from '../cards';
 import TreasureChest from '../cards/treasure-chest';
@@ -128,6 +129,8 @@ export default Vue.extend({
 					res = await this.mainPhase();
 				} else if (type === 'cardChoice') {
 					res = await this.cardChoice(payload);
+				} else if (type === 'unitChoice') {
+					res = await this.unitChoice(payload);
 				}
 
 				socket.send(JSON.stringify({
@@ -209,6 +212,19 @@ export default Vue.extend({
 				const vm = this.$root.new(XCardChoiceDialog, {
 					game: this.game,
 					cards: cards
+				}).$on('chosen', card => {
+					res(card.id);
+					vm.$el.parentNode.removeChild(vm.$el);
+				});
+			});
+		},
+
+		unitChoice(owner) {
+			return new Promise((res) => {
+				const vm = this.$root.new(XUnitChoiceDialog, {
+					game: this.game,
+					owner: owner,
+					my: this.myPlayerNumber
 				}).$on('chosen', card => {
 					res(card.id);
 					vm.$el.parentNode.removeChild(vm.$el);

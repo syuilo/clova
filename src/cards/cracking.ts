@@ -8,7 +8,7 @@ export default {
 	type: 'spell' as const,
 	cost: 3,
 	action: async (game, thisCard, api) => {
-		const chosen = await api.unitChoice(game.turn === 0 ? 1 : 0);
+		const chosen = await api.unitChoice(game.turn, game.turn === 0 ? 1 : 0);
 		chosen.skills = chosen.skills.filter(x => x !== 'defender');
 	}
 } as CardDef;
