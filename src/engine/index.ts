@@ -112,7 +112,7 @@ export class Game {
 					owner: 0,
 					...(def.type === 'unit' ? {
 						power: def.power,
-						skills: def.skills,
+						skills: JSON.parse(JSON.stringify(def.skills)),
 					} : {})
 				};
 			}),
@@ -132,7 +132,7 @@ export class Game {
 					owner: 1,
 					...(def.type === 'unit' ? {
 						power: def.power,
-						skills: def.skills,
+						skills: JSON.parse(JSON.stringify(def.skills)),
 					} : {})
 				};
 			}),

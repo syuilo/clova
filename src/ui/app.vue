@@ -49,6 +49,7 @@ import mimic from '../cards/mimic';
 import barrier from '../cards/barrier';
 import cracking from '../cards/cracking';
 import goldenDragon from '../cards/golden-dragon';
+import godDog from '../cards/god-dog';
 
 type Game = ClientState;
 
@@ -95,6 +96,7 @@ export default Vue.extend({
 				barrier.id,
 				cracking.id,
 				goldenDragon.id,
+				godDog.id, godDog.id,
 			];
 
 			socket.send(JSON.stringify({
