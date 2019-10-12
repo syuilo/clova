@@ -6,19 +6,19 @@
 			<div>
 				<div v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i" class="disabled">
 					<x-card v-if="game.field[my === 0 ? 'back2' : 'back1'][i].type === 'unit'"
-						:card="game.field[my === 0 ? 'back2' : 'back1'][i].card" :game="game" @click="select(game.field[my === 0 ? 'back2' : 'back1'][i].card)"/>
+						:card="game.field[my === 0 ? 'back2' : 'back1'][i].card" @click="select(game.field[my === 0 ? 'back2' : 'back1'][i].card)"/>
 				</div>
 			</div>
 			<div>
 				<div v-for="i in (my === 0 ? [0, 1, 2, 3] : [3, 2, 1, 0])" :key="i" class="disabled">
 					<x-card v-if="game.field.front[i].type === 'unit'"
-						:card="game.field.front[i].card" :game="game" @click="select(game.field.front[i].card)"/>
+						:card="game.field.front[i].card" @click="select(game.field.front[i].card)"/>
 				</div>
 			</div>
 			<div>
 				<div v-for="i in (my === 0 ? [0, 1, 2] : [2, 1, 0])" :key="i" :class="{ disabled: game.field[my === 0 ? 'back1' : 'back2'][i].type !== 'empty', selected: selected === i }" @click="select(i)">
 					<x-card v-if="game.field[my === 0 ? 'back1' : 'back2'][i].type === 'unit'"
-						:card="game.field[my === 0 ? 'back1' : 'back2'][i].card" :game="game" @click="select(game.field[my === 0 ? 'back1' : 'back2'][i].card)"/>
+						:card="game.field[my === 0 ? 'back1' : 'back2'][i].card" @click="select(game.field[my === 0 ? 'back1' : 'back2'][i].card)"/>
 				</div>
 			</div>
 		</div>

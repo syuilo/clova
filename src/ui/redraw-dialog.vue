@@ -2,7 +2,7 @@
 <div id="redraw">
 	<div>
 		<p>引き直すカードを選択してください</p>
-		<x-card v-for="card in cards" :key="card.id" :card="card" :game="game" @click="toggle(card)" :class="{ active: redraw.some(c => c.id === card.id) }"/>
+		<x-card v-for="card in cards" :key="card.id" :card="card" @click="toggle(card)" :class="{ active: redraw.some(c => c.id === card.id) }"/>
 		<button @click="ok()">OK</button>
 	</div>
 </div>
@@ -20,10 +20,6 @@ export default Vue.extend({
 	props: {
 		cards: {
 			type: Array,
-			required: true
-		},
-		game: {
-			type: Object,
 			required: true
 		},
 	},

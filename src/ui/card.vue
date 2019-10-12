@@ -19,10 +19,6 @@ export default Vue.extend({
 			type: Object,
 			required: true
 		},
-		game: {
-			type: Object,
-			required: true
-		},
 	},
 
 	data() {

@@ -1,6 +1,6 @@
 <template>
 <div class="cell" @click="card == null ? $emit('move') : () => {}">
-	<x-card v-if="card" :card="card" :game="game" :class="{ selected: selected && (selected.id === card.id), opponent: card.owner !== my }"
+	<x-card v-if="card" :card="card" :class="{ selected: selected && (selected.id === card.id), opponent: card.owner !== my }"
 		@click="$emit('selected', card)"/>
 	<div class="cursor a"></div>
 	<div class="cursor b"></div>

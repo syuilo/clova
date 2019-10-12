@@ -16,7 +16,6 @@
 	<div id="hand" v-if="game">
 		<x-card v-for="card in game.myHand" :key="card.id" class="card"
 			:card="card"
-			:game="game"
 			@click="select(card)"
 			:class="{ selected: selectedHandCard === card.id, disabled: lookup(card).cost > game.myEnergy }"/>
 		<div class="energy">{{ game.myEnergy }}</div>
@@ -81,34 +80,8 @@ export default Vue.extend({
 	created() {
 		const actions = [];
 
-		const name = window.prompt('Your name', Math.random().toString());
-		const room = window.prompt('Room', 'testRoom');
-		const socket = new WebSocket(`ws://localhost:3000/?name=${name}&room=${room}`);
-
-		socket.addEventListener('open', event => {
-			const myDeck = [
-				slime.id, slime.id, slime.id,
-				golem.id, golem.id, golem.id,
-				treasureChest.id, treasureChest.id, treasureChest.id,
-				dragon.id, dragon.id,
-				witch.id, witch.id,
-				energyDrink.id, energyDrink.id, energyDrink.id,
-				mimic.id, mimic.id,
-				movingHaniwa.id, movingHaniwa.id, movingHaniwa.id,
-				barrier.id,
-				cracking.id,
-				goldenDragon.id,
-				godDog.id, godDog.id,
-				necromancer.id, necromancer.id,
-			];
-
-			socket.send(JSON.stringify({
-				type: 'enter',
-				payload: {
-					deck: myDeck
-				}
-			}));
-		});
+		const room = window.location.search.match(/\?room=(.+?)$/)![1];
+		const socket = new WebSocket(`ws://${window.location.host}:3000/?name=${name}&room=${room}`);
 
 		socket.addEventListener('message', async event => {
 			const message = JSON.parse(event.data);
@@ -149,6 +122,12 @@ export default Vue.extend({
 					payload: res
 				}));
 			}
+		});
+
+		socket.addEventListener('open', event => {
+			socket.send(JSON.stringify({
+				type: 'ready',
+			}));
 		});
 	},
 

@@ -2,7 +2,7 @@
 <div id="card-choice">
 	<div>
 		<p>カードをひとつ選択してください</p>
-		<x-card v-for="card in cards" :key="card.id" :card="card" :game="game" @click="select(card)"/>
+		<x-card v-for="card in cards" :key="card.id" :card="card" @click="select(card)"/>
 	</div>
 </div>
 </template>
@@ -19,10 +19,6 @@ export default Vue.extend({
 	props: {
 		cards: {
 			type: Array,
-			required: true
-		},
-		game: {
-			type: Object,
 			required: true
 		},
 	},
