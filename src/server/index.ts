@@ -39,7 +39,7 @@ app.listen(config.port, () => {
 });
 
 const wss = new WebSocket.Server({
-	port: 3000,
+	port: 3001,
 }, () => {
 	console.log('websocket server started');
 });
