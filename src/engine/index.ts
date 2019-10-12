@@ -21,32 +21,43 @@ type Field = {
 type API = {
 	cardChoice: (player: number, cards: Card[]) => Promise<Card>;
 	unitChoice: (player: number, owner: number | null) => Promise<UnitCard>;
+	cardChoiceFromDeck: (player: number, type: 'unit' | 'spell' | null, costMax: number) => Promise<Card>;
+	cardChoiceFromTrash: (player: number, type: 'unit' | 'spell' | null, costMax: number) => Promise<Card>;
+	choiceFieldIndex: (player: number) => Promise<number>;
 };
 
-export type CardDef = {
+type UnitCardDef = {
 	id: string;
-	type: string;
 	cost: number;
-} & ({
 	type: 'unit';
 	power: number;
 	skills: ('quick' | 'defender')[];
-	setup: (game: Game, thisCard: Card, api: API) => Promise<void>;
-} | {
-	type: 'spell';
-	action: (game: Game, thisCard: Card, api: API) => Promise<void>;
-});
-
-type SpellCard = {
-	def: CardDef['id'];
-	id: string;
-	owner: number;
+	setup?: (game: Game, thisCard: Card, api: API) => Promise<void>;
+	onPlay?: (game: Game, thisCard: Card, api: API) => Promise<void>;
+	onDestroy?: (game: Game, thisCard: Card, api: API) => Promise<void>;
 };
 
-type UnitCard = {
+type SpellCardDef = {
+	id: string;
+	cost: number;
+	type: 'spell';
+	action: (game: Game, thisCard: Card, api: API) => Promise<void>;
+};
+
+export type CardDef = UnitCardDef | SpellCardDef;
+
+export type SpellCard = {
 	def: CardDef['id'];
 	id: string;
 	owner: number;
+	cost: number;
+};
+
+export type UnitCard = {
+	def: CardDef['id'];
+	id: string;
+	owner: number;
+	cost: number;
 	power: number;
 	skills: ('quick' | 'defender')[];
 };
@@ -91,7 +102,6 @@ export class Game {
 	public controller: Controller;
 	public state: State;
 	private rng: seedrandom.prng;
-	public destroyHandlers: Record<string, Function> = {};
 	private energyCharge = 3;
 	private logs: { type: string; payload: any; }[] = [];
 
@@ -110,6 +120,7 @@ export class Game {
 					def: id,
 					id: cardId.toString(),
 					owner: 0,
+					cost: def.cost,
 					...(def.type === 'unit' ? {
 						power: def.power,
 						skills: JSON.parse(JSON.stringify(def.skills)),
@@ -130,6 +141,7 @@ export class Game {
 					def: id,
 					id: cardId.toString(),
 					owner: 1,
+					cost: def.cost,
 					...(def.type === 'unit' ? {
 						power: def.power,
 						skills: JSON.parse(JSON.stringify(def.skills)),
@@ -184,7 +196,7 @@ export class Game {
 		};
 	}
 
-	public lookupCard(card: Card | Card['id']): CardDef {
+	public lookup(card: Card | Card['id']): CardDef {
 		if (typeof card === 'string') {
 			return this.cards.find(def => def.id === card)!;
 		} else {
@@ -235,6 +247,16 @@ export class Game {
 		return null;
 	}
 
+	public findCardFromDeck(player: number, cardId: Card['id']): Card | null {
+		const deck = player === 0 ? this.state.player1.deck : this.state.player2.deck;
+		return deck.find(card => card.id === cardId) || null;
+	}
+
+	public findCardFromTrash(player: number, cardId: Card['id']): Card | null {
+		const trash = player === 0 ? this.state.player1.trash : this.state.player2.trash;
+		return trash.find(card => card.id === cardId) || null;
+	}
+
 	public async start() {
 		const deck1 = this.shuffle(this.state.player1.deck);
 		const deck2 = this.shuffle(this.state.player2.deck);
@@ -272,15 +294,7 @@ export class Game {
 		this.mainPhase();
 	}
 
-	private async useSpell(card: Card) {
-		const def = this.lookupCard(card);
-
-		if (def.type !== 'spell') {
-			throw new Error('spell card required');
-		}
-
-		(card.owner === 0 ? this.state.player1 : this.state.player2).trash.push(card);
-
+	private get api() {
 		const api: API = {
 			cardChoice: async (player, cards) => {
 				const chosen = await this.q(player, 'cardChoice', cards);
@@ -295,9 +309,41 @@ export class Game {
 				if (owner !== null && card.owner !== owner) throw new Error('owner not match');
 				return card;
 			},
+			cardChoiceFromDeck: async (player, type, costMax) => {
+				const chosen = await this.q(player, 'cardChoiceFromDeck', { type, costMax });
+				const card = this.findCardFromDeck(player, chosen);
+				if (card == null) throw new Error('no such card');
+				if (this.lookup(card).type !== type) throw new Error('not match type');
+				if (card.cost > costMax) throw new Error('cost over');
+				return card;
+			},
+			cardChoiceFromTrash: async (player, type, costMax) => {
+				const chosen = await this.q(player, 'cardChoiceFromTrash', { type, costMax });
+				const card = this.findCardFromTrash(player, chosen);
+				if (card == null) throw new Error('no such card');
+				if (this.lookup(card).type !== type) throw new Error('not match type');
+				if (card.cost > costMax) throw new Error('cost over');
+				return card;
+			},
+			choiceFieldIndex: async (player) => {
+				const index = await this.q(player, 'choiceFieldIndex', null);
+				return index;
+			},
 		};
 
-		await def.action(this, card, api);
+		return api;
+	}
+
+	private async useSpell(card: Card) {
+		const def = this.lookup(card);
+
+		if (def.type !== 'spell') {
+			throw new Error('spell card required');
+		}
+
+		(card.owner === 0 ? this.state.player1 : this.state.player2).trash.push(card);
+
+		await def.action(this, card, this.api);
 	}
 
 	/**
@@ -321,7 +367,7 @@ export class Game {
 					const cardId = action.payload.card;
 					const card = this.player.hand.find(c => c.id === cardId);
 					if (card == null) throw new Error('no such card');
-					const cardDef = this.lookupCard(card);
+					const cardDef = this.lookup(card);
 					if (this.player.energy < cardDef.cost) throw new Error('no enough energy');
 
 					// エネルギー消費
@@ -332,7 +378,7 @@ export class Game {
 	
 					if (cardDef.type === 'unit') {
 						playedUnits.push(card.id);
-						this.summon(card as UnitCard, action.payload.index);
+						await this.playUnit(card as UnitCard, action.payload.index);
 					} else if (cardDef.type === 'spell') {
 						await this.useSpell(card);
 					}
@@ -389,8 +435,8 @@ export class Game {
 					const attackeePower = attackee!.power;
 					attackee!.power -= attackerPower;
 					attacker!.power -= attackeePower;
-					if (attacker!.power <= 0) this.destroy(attacker!);
-					if (attackee!.power <= 0) this.destroy(attackee!);
+					if (attacker!.power <= 0) await this.destroy(attacker!);
+					if (attackee!.power <= 0) await this.destroy(attackee!);
 
 					break;
 				}
@@ -439,17 +485,20 @@ export class Game {
 	/**
 	 * Destroy a unit
 	 */
-	public destroy(unit: Card) {
+	public async destroy(unit: UnitCard) {
 		const pos = this.findUnitPosition(unit);
 		if (pos === null) throw new Error('no such unit');
 		this.state.field[pos[0]][pos[1]] = { type: 'empty' };
 		(unit.owner === 0 ? this.state.player1 : this.state.player2).trash.push(unit);
 
+		const def = this.lookup(unit) as UnitCardDef;
+
+		// 状態リセット
+		unit.power = def.power;
+		unit.skills = JSON.parse(JSON.stringify(def.skills));
+
 		// 破壊時ハンドラを実行
-		if (this.destroyHandlers[unit.id]) {
-			this.destroyHandlers[unit.id]();
-			delete this.destroyHandlers[unit.id];
-		}
+		if (def.onDestroy) await def.onDestroy(this, unit, this.api);
 	}
 
 	public draw(player: number): Card | null {
@@ -470,12 +519,16 @@ export class Game {
 		}
 	}
 
-	public summon(card: UnitCard, index: number) {
+	public async playUnit(card: UnitCard, index: number) {
+		// プレイ時ハンドラを実行
+		const def = this.lookup(card) as UnitCardDef;
+		if (def.onPlay) await def.onPlay(this, card, this.api);
+
 		this.setUnit(card, this.state.turn === 0 ? 'back1' : 'back2', index);
 	}
 
 	public setUnit(card: UnitCard, section: keyof State['field'], index: number) {
-		const def = this.lookupCard(card);
+		const def = this.lookup(card);
 
 		if (this.state.field[section][index].type === 'empty') {
 			this.state.field[section][index] = {

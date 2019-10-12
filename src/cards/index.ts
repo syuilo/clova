@@ -10,5 +10,6 @@ import goldenDragon from './golden-dragon';
 import barrier from './barrier';
 import cracking from './cracking';
 import godDog from './god-dog';
+import necromancer from './necromancer';
 
-export const CARDS = [slime, treasureChest, golem, dragon, witch, energyDrink, mimic, movingHaniwa, goldenDragon, barrier, cracking, godDog];
+export const CARDS = [slime, treasureChest, golem, dragon, witch, energyDrink, mimic, movingHaniwa, goldenDragon, barrier, cracking, godDog, necromancer];

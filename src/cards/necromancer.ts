@@ -1,4 +1,4 @@
-import { CardDef } from '../engine';
+import { CardDef, UnitCard } from '../engine';
 
 export default {
 	id: 'cee44ed0-571a-4423-9fbf-8a2d5ad85f08',
@@ -9,7 +9,9 @@ export default {
 	power: 3,
 	cost: 5,
 	skills: [],
-	setup: async (game, thisCard) => {
-
+	onPlay: async (game, thisCard, api) => {
+		const chosen = await api.cardChoiceFromTrash(game.turn, 'unit', 3) as UnitCard;
+		const index = await api.choiceFieldIndex(game.turn);
+		game.setUnit(chosen, game.turn === 0 ? 'back1' : 'back2', index);
 	}
 } as CardDef;

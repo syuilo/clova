@@ -34,6 +34,7 @@ import XCard from './card.vue';
 import XRedrawDialog from './redraw-dialog.vue';
 import XCardChoiceDialog from './card-choice-dialog.vue';
 import XUnitChoiceDialog from './unit-choice-dialog.vue';
+import XChoiceFieldIndexDialog from './choice-field-index-dialog.vue';
 import XField from './field.vue';
 import { CARDS } from '../cards';
 import TreasureChest from '../cards/treasure-chest';
@@ -50,6 +51,7 @@ import barrier from '../cards/barrier';
 import cracking from '../cards/cracking';
 import goldenDragon from '../cards/golden-dragon';
 import godDog from '../cards/god-dog';
+import necromancer from '../cards/necromancer';
 
 type Game = ClientState;
 
@@ -97,6 +99,7 @@ export default Vue.extend({
 				cracking.id,
 				goldenDragon.id,
 				godDog.id, godDog.id,
+				necromancer.id, necromancer.id,
 			];
 
 			socket.send(JSON.stringify({
@@ -133,6 +136,12 @@ export default Vue.extend({
 					res = await this.cardChoice(payload);
 				} else if (type === 'unitChoice') {
 					res = await this.unitChoice(payload);
+				} else if (type === 'cardChoiceFromDeck') {
+					res = await this.cardChoiceFrom('deck', payload);
+				} else if (type === 'cardChoiceFromTrash') {
+					res = await this.cardChoiceFrom('trash', payload);
+				} else if (type === 'choiceFieldIndex') {
+					res = await this.choiceFieldIndex();
 				}
 
 				socket.send(JSON.stringify({
@@ -229,6 +238,33 @@ export default Vue.extend({
 					my: this.myPlayerNumber
 				}).$on('chosen', card => {
 					res(card.id);
+					vm.$el.parentNode.removeChild(vm.$el);
+				});
+			});
+		},
+
+		cardChoiceFrom(place, { type, costMax }) {
+			let cards = (place === 'deck' ? this.game.myDeck : this.game.myTrash);
+			if (type !== null) cards = cards.filter(c => this.lookup(c).type === type);
+			if (costMax !== null) cards = cards.filter(c => c.cost <= costMax);
+			return new Promise((res) => {
+				const vm = this.$root.new(XCardChoiceDialog, {
+					game: this.game,
+					cards: cards
+				}).$on('chosen', card => {
+					res(card.id);
+					vm.$el.parentNode.removeChild(vm.$el);
+				});
+			});
+		},
+
+		choiceFieldIndex() {
+			return new Promise((res) => {
+				const vm = this.$root.new(XChoiceFieldIndexDialog, {
+					game: this.game,
+					my: this.myPlayerNumber
+				}).$on('chosen', index => {
+					res(index);
 					vm.$el.parentNode.removeChild(vm.$el);
 				});
 			});

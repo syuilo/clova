@@ -10,9 +10,7 @@ export default {
 	power: 4,
 	cost: 4,
 	skills: [],
-	setup: async (game, thisCard) => {
-		game.destroyHandlers[thisCard.id] = () => {
-			game.draw(thisCard.owner === 0 ? 1 : 0);
-		};
+	onDestroy: async (game, thisCard) => {
+		game.draw(thisCard.owner === 0 ? 1 : 0);
 	}
 } as CardDef;
