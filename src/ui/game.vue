@@ -81,7 +81,7 @@ export default Vue.extend({
 		const actions = [];
 		const name = localStorage.getItem('name');
 		const room = window.location.search.match(/\?room=(.+?)$/)![1];
-		const socket = new WebSocket(`wss://${window.location.host}:3001/?name=${name}&room=${room}`);
+		const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/?name=${name}&room=${room}`);
 
 		socket.addEventListener('message', async event => {
 			const message = JSON.parse(event.data);

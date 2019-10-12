@@ -1,3 +1,4 @@
+import * as http from 'http';
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
 import * as send from 'koa-send';
@@ -34,14 +35,14 @@ app
 	.use(router.routes())
 	.use(router.allowedMethods());
 
-app.listen(config.port, () => {
-	console.log('http server started');
-});
+const server = http.createServer(app.callback());
 
 const wss = new WebSocket.Server({
-	port: 3001,
-}, () => {
-	console.log('websocket server started');
+	server: server
+});
+
+server.listen(config.port, () => {
+	console.log('server started ' + config.port);
 });
 
 const games: Record<string, Game> = {};
