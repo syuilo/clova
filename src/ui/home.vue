@@ -56,7 +56,7 @@ export default Vue.extend({
 			this.name = window.prompt('ユーザー名を決めてください');
 		}
 
-		this.socket = new WebSocket(`ws://${window.location.host}:3001/?name=${this.name}`);
+		this.socket = new WebSocket(`wss://${window.location.host}:3001/?name=${this.name}`);
 
 		this.socket.addEventListener('message', async event => {
 			const message = JSON.parse(event.data);
