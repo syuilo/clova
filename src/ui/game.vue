@@ -1,7 +1,15 @@
 <template>
 <div id="game">
 	<header>
-		<p v-if="isMyTurn">あなたのターンです</p>
+		<template v-if="!ready">
+			<p>相手を待っています...</p>
+		</template>
+		<template v-else>
+			<p v-if="isMyTurn">あなたのターンです</p>
+			<p v-if="started && !isMyTurn">相手を待っています...</p>
+			<p v-if="redrawed && !started">相手を待っています...</p>
+			<p v-if="!redrawed && !started">あなたを待っています...</p>
+		</template>
 	</header>
 	<div id="opponent-hand" v-if="game">
 		<div v-for="i in game.opponentHandCount" :key="i"></div>
@@ -68,12 +76,15 @@ export default Vue.extend({
 			movedUnits: [],
 			attackedUnits: [],
 			playedUnits: [],
+			started: false,
+			redrawed: false,
+			ready: false,
 		};
 	},
 
 	computed: {
 		isMyTurn(): boolean {
-			return this.game && (this.game.turn === this.myPlayerNumber);
+			return this.game && this.started && (this.game.turn === this.myPlayerNumber);
 		}
 	},
 
@@ -106,8 +117,12 @@ export default Vue.extend({
 
 				let res = null;
 
+				this.ready = true;
+				this.started = type !== 'choiceRedrawCards';
+
 				if (type === 'choiceRedrawCards') {
 					res = await this.choiceRedrawCards(payload);
+					this.redrawed = true;
 				} else if (type === 'mainPhase') {
 					res = await this.mainPhase();
 				} else if (type === 'cardChoice') {
@@ -258,9 +273,11 @@ export default Vue.extend({
 
 	> header
 		position fixed
+		z-index 1000
 		top 0
 		left 0
 		width 100%
+		background rgba(0, 0, 0, 0.7)
 
 	> .field
 		perspective 1000px

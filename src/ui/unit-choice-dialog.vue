@@ -77,6 +77,7 @@ export default Vue.extend({
 
 	> div
 		text-align center
+		margin 64px
 
 		> div
 			> div
