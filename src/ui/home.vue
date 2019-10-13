@@ -6,15 +6,15 @@
 		<hr>
 		<button @click="play()" :disabled="waiting">{{ waiting ? '相手を待っています...' : '対戦' }}</button>
 		<hr>
-		<section>
+		<section class="deck">
 			<h2>デッキ編成</h2>
 			<select ref="cardSelect">
 				<option v-for="card in CARDS" :key="card.id" :value="card.id">{{ card.name }}</option>
 			</select>
 			<button @click="deck.push($refs.cardSelect.value)">追加</button>
-			<div v-for="(card, i) in deck.map(x => CARDS.find(y => y.id === x))" :key="i">
+			<span v-for="(card, i) in deck.map(x => CARDS.find(y => y.id === x))" :key="i">
 				{{ card.name }} <button @click="deck = deck.filter((x, j) => j !== i)">x</button>
-			</div>
+			</span>
 		</section>
 		<section>
 			<h2>遊び方</h2>
@@ -132,4 +132,8 @@ export default Vue.extend({
 			padding 32px
 			margin 32px 0
 			background rgba(0, 0, 0, 0.5)
+
+		> .deck
+			> span
+				margin 0 8px
 </style>
