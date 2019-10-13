@@ -296,7 +296,7 @@ export class Game {
 		}
 		this.state.player2.hand = player2Cards;
 
-		this.mainPhase();
+		await this.mainPhase();
 	}
 
 	private get api() {
@@ -475,12 +475,15 @@ export class Game {
 			
 				default: throw new Error('Unknown main phase action: ' + action.type);
 			}
+			if (this.state.winner !== null) ended = true;
 		}
 
 		const nextTurn = this.turn === 0 ? 1 : 0;
 		this.state.turn = nextTurn;
 		if (nextTurn === 0 && this.energyCharge < ENERGY_MAX) this.energyCharge++;
-		this.mainPhase();
+		if (this.state.winner === null) {
+			await this.mainPhase();
+		}
 	}
 
 	public damage(target: Player, amount: number) {

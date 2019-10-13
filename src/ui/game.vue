@@ -95,15 +95,14 @@ export default Vue.extend({
 				}));
 			} else if (message.type === 'info') {
 				this.game = message.payload.game;
+			} else if (message.type === 'end') {
+				this.game = message.payload.game;
+				alert(this.game.winner === this.myPlayerNumber ? 'あなたの勝ちです' : 'あなたの負けです');
+				location.href = '/';
+				return;
 			} else if (message.type === 'q') {
 				const { type, payload, game } = message.payload;
 				this.game = game;
-
-				if (this.game.winner !== null) {
-					alert(this.game.winner === this.myPlayerNumber ? 'あなたの勝ちです' : 'あなたの負けです');
-					location.href = '/';
-					return;
-				}
 
 				let res = null;
 

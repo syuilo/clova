@@ -134,8 +134,13 @@ wss.on('connection', (ws, req) => {
 				}
 				if (rooms[room].player1ready && rooms[room].player2ready && !rooms[room].started) {
 					rooms[room].started = true;
-					game.start();
-					console.log('game started');
+					await game.start();
+					rooms[room].player1ws!.send(JSON.stringify({ type: 'end', payload: {
+						game: game.getStateForClient(0),
+					}}));
+					rooms[room].player2ws!.send(JSON.stringify({ type: 'end', payload: {
+						game: game.getStateForClient(1),
+					}}));
 				}
 			} else if (msg.type === 'action') {
 				const action = {
