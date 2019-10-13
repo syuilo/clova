@@ -1,40 +1,42 @@
 <template>
 <div id="home">
-	<h1>Misskey TCG (仮)</h1>
-	<p>ようこそ、<b>{{ name }}</b>さん</p>
-	<hr>
-	<button @click="play()" :disabled="waiting">{{ waiting ? '相手を待っています...' : '対戦' }}</button>
-	<hr>
-	<section>
-		<h2>デッキ編成</h2>
-		<select ref="cardSelect">
-			<option v-for="card in CARDS" :key="card.id" :value="card.id">{{ card.name }}</option>
-		</select>
-		<button @click="deck.push($refs.cardSelect.value)">追加</button>
-		<div v-for="(card, i) in deck.map(x => CARDS.find(y => y.id === x))" :key="i">
-			{{ card.name }} <button @click="deck = deck.filter((x, j) => j !== i)">x</button>
-		</div>
-	</section>
-	<hr>
-	<section>
-		<h2>遊び方</h2>
-		<p>
-			Misskey TCG (仮)はターン制のトレーディングカードゲームです。自分だけのデッキを構築し、他の人と対戦します。<br>
-			ゲームの目的は、カードを駆使して戦い、相手のライフを0にすることです。<br>
-			カードにはユニットカードとスペルカードの2種類あります。ユニットカードはフィールドに出して相手や相手のユニットを攻撃できます。スペルは使用すると何らかの効果を発動します。このようにユニットを出したりスペルを使ったりすることをプレイと呼びます。<br>
-			フィールドは、「自分バックライン」「フロントライン」「相手バックライン」の3つのエリアに分かれています。ユニットをプレイするときは、「自分バックライン」のどれかのマスに出さなければなりません。<br>
-			ゲームが始まると、最初に手札が提示されます。この時、その中から気に入らないカードを選択して引き直すことができます。<br>
-			次に、あなたまたは相手のターンが始まります。自分のターンでは、手札にあるカードをプレイすることができます。<br>
-			カードをプレイするときは、そのカードに記載された「コスト」が自分の「エネルギー」から引かれます。エネルギーが足りない場合はプレイできません。エネルギーは、毎ターン自動で回復します。<br>
-			フィールドに出たユニットは、次のターンから隣接するマスに移動したり隣接するマスにいる他の敵ユニットに攻撃するといった行動を行えます(それぞれ1ターンに1回だけ)。属性「クイック」を持つユニットは、次のターンからではなくフィールドに出たそのターンからすぐに行動できます。<br>
-			ユニットが他のユニットに攻撃すると戦闘が発生し、お互いのパワーからお互いのパワーが引かれます。パワーが0になるとユニットは破壊され、ユニットは「トラッシュ」に移動します。相手のユニットに「ディフェンダー」属性をもつものがいる場合、まずそのユニットから先に戦闘を行わなければなりません。<br>
-			フロントラインにいるユニットは相手プレイヤーに攻撃でき、相手のライフが攻撃するユニットのパワーだけ引かれます。相手のライフが0になると勝負に勝ちます。<br>
-		</p>
-	</section>
-	<hr>
-	<footer>
-		<small>(c) syuilo 2019</small>
-	</footer>
+	<main>
+		<h1>Misskey TCG (仮)</h1>
+		<p>ようこそ、<b>{{ name }}</b>さん</p>
+		<hr>
+		<button @click="play()" :disabled="waiting">{{ waiting ? '相手を待っています...' : '対戦' }}</button>
+		<hr>
+		<section>
+			<h2>デッキ編成</h2>
+			<select ref="cardSelect">
+				<option v-for="card in CARDS" :key="card.id" :value="card.id">{{ card.name }}</option>
+			</select>
+			<button @click="deck.push($refs.cardSelect.value)">追加</button>
+			<div v-for="(card, i) in deck.map(x => CARDS.find(y => y.id === x))" :key="i">
+				{{ card.name }} <button @click="deck = deck.filter((x, j) => j !== i)">x</button>
+			</div>
+		</section>
+		<hr>
+		<section>
+			<h2>遊び方</h2>
+			<p>
+				Misskey TCG (仮)はターン制のトレーディングカードゲームです。自分だけのデッキを構築し、他の人と対戦します。<br>
+				ゲームの目的は、カードを駆使して戦い、相手のライフを0にすることです。<br>
+				カードにはユニットカードとスペルカードの2種類あります。ユニットカードはフィールドに出して相手や相手のユニットを攻撃できます。スペルは使用すると何らかの効果を発動します。このようにユニットを出したりスペルを使ったりすることをプレイと呼びます。<br>
+				フィールドは、「自分バックライン」「フロントライン」「相手バックライン」の3つのエリアに分かれています。ユニットをプレイするときは、「自分バックライン」のどれかのマスに出さなければなりません。<br>
+				ゲームが始まると、最初に手札が提示されます。この時、その中から気に入らないカードを選択して引き直すことができます。<br>
+				次に、あなたまたは相手のターンが始まります。自分のターンでは、手札にあるカードをプレイすることができます。<br>
+				カードをプレイするときは、そのカードに記載された「コスト」が自分の「エネルギー」から引かれます。エネルギーが足りない場合はプレイできません。エネルギーは、毎ターン自動で回復します。<br>
+				フィールドに出たユニットは、次のターンから隣接するマスに移動したり隣接するマスにいる他の敵ユニットに攻撃するといった行動を行えます(それぞれ1ターンに1回だけ)。属性「クイック」を持つユニットは、次のターンからではなくフィールドに出たそのターンからすぐに行動できます。<br>
+				ユニットが他のユニットに攻撃すると戦闘が発生し、お互いのパワーからお互いのパワーが引かれます。パワーが0になるとユニットは破壊され、ユニットは「トラッシュ」に移動します。相手のユニットに「ディフェンダー」属性をもつものがいる場合、まずそのユニットから先に戦闘を行わなければなりません。<br>
+				フロントラインにいるユニットは相手プレイヤーに攻撃でき、相手のライフが攻撃するユニットのパワーだけ引かれます。相手のライフが0になると勝負に勝ちます。<br>
+			</p>
+		</section>
+		<hr>
+		<footer>
+			<small>(c) syuilo 2019</small>
+		</footer>
+	</main>
 </div>
 </template>
 
@@ -96,4 +98,18 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 #home
 	text-align center
+	background-color #151515
+	background-image url('https://s3.arkjp.net/misskey/6abed245-e216-4078-a489-80f32a195823.jpg')
+	background-size cover
+	background-position center center
+	min-height 100vh
+	padding 32px
+	box-sizing border-box
+
+	> main
+		max-width 800px
+		margin 0 auto
+		background rgba(0, 0, 0, 0.7)
+		backdrop-filter blur(8px)
+		padding 64px
 </style>

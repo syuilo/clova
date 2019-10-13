@@ -95,7 +95,7 @@ export default Vue.extend({
 <style lang="stylus" scoped>
 #field
 	background-color #151515
-	background-image url('file:///C:/Users/ai/Pictures/inspire/2015-12-05_00022.jpg')
+	background-image url('https://s3.arkjp.net/misskey/6abed245-e216-4078-a489-80f32a195823.jpg')
 	background-size cover
 	background-position center center
 	padding 32px 0
