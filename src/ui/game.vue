@@ -99,6 +99,12 @@ export default Vue.extend({
 				const { type, payload, game } = message.payload;
 				this.game = game;
 
+				if (this.game.winner !== null) {
+					alert(this.game.winner === this.myPlayerNumber ? 'あなたの勝ちです' : 'あなたの負けです');
+					location.href = '/';
+					return;
+				}
+
 				let res = null;
 
 				if (type === 'choiceRedrawCards') {

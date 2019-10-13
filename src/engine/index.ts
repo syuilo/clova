@@ -65,6 +65,7 @@ export type UnitCard = {
 export type Card = UnitCard | SpellCard;
 
 type Player = {
+	id: number,
 	deck: Card[];
 	hand: Card[];
 	trash: Card[];
@@ -93,6 +94,7 @@ export type ClientState = {
 	opponentEnergy: number;
 	field: Field;
 	turn: number;
+	winner: number | null;
 };
 
 const ENERGY_MAX = 10;
@@ -113,6 +115,7 @@ export class Game {
 		let cardId = 0;
 
 		const player1 = {
+			id: 0,
 			deck: player1Deck.map(id => {
 				const def = cards.find(x => x.id === id)!;
 				cardId++;
@@ -134,6 +137,7 @@ export class Game {
 		};
 
 		const player2 = {
+			id: 1,
 			deck: player2Deck.map(id => {
 				const def = cards.find(x => x.id === id)!;
 				cardId++;
@@ -179,6 +183,10 @@ export class Game {
 		return this.turn === 0 ? this.state.player1 : this.state.player2;
 	}
 
+	public get field() {
+		return this.state.field;
+	}
+
 	public getStateForClient(player: number): ClientState {
 		return {
 			opponentHandCount: player === 0 ? this.state.player2.hand.length : this.state.player1.hand.length,
@@ -191,8 +199,9 @@ export class Game {
 			opponentLife: player === 0 ? this.state.player2.life : this.state.player1.life,
 			myEnergy: player === 0 ? this.state.player1.energy : this.state.player2.energy,
 			opponentEnergy: player === 0 ? this.state.player2.energy : this.state.player1.energy,
-			field: this.state.field,
+			field: this.field,
 			turn: this.turn,
+			winner: this.state.winner,
 		};
 	}
 
@@ -223,14 +232,10 @@ export class Game {
 		this.logs.push({ type, payload });
 	}
 
-	private randomPick(cards: Card[]): Card {
-		return cards; // TODO
-	}
-
 	public findUnitPosition(card: Card): [keyof Field, number] | null {
-		const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === card.id);
-		const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === card.id);
-		const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === card.id);
+		const posBack1 = this.field.back1.findIndex(c => c.type === 'unit' && c.card.id === card.id);
+		const posBack2 = this.field.back2.findIndex(c => c.type === 'unit' && c.card.id === card.id);
+		const posFront = this.field.front.findIndex(c => c.type === 'unit' && c.card.id === card.id);
 		if (posBack1 > -1) return ['back1', posBack1];
 		if (posBack2 > -1) return ['back2', posBack2];
 		if (posFront > -1) return ['front', posFront];
@@ -238,12 +243,12 @@ export class Game {
 	}
 
 	public findUnit(cardId: Card['id']): UnitCard | null {
-		const posBack1 = this.state.field.back1.findIndex(c => c.type === 'unit' && c.card.id === cardId);
-		const posBack2 = this.state.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
-		const posFront = this.state.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
-		if (posBack1 > -1) return (this.state.field.back1[posBack1] as UnitCell).card;
-		if (posBack2 > -1) return (this.state.field.back2[posBack2] as UnitCell).card;
-		if (posFront > -1) return (this.state.field.front[posFront] as UnitCell).card;
+		const posBack1 = this.field.back1.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+		const posBack2 = this.field.back2.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+		const posFront = this.field.front.findIndex(c => c.type === 'unit' && c.card.id === cardId);
+		if (posBack1 > -1) return (this.field.back1[posBack1] as UnitCell).card;
+		if (posBack2 > -1) return (this.field.back2[posBack2] as UnitCell).card;
+		if (posFront > -1) return (this.field.front[posFront] as UnitCell).card;
 		return null;
 	}
 
@@ -396,10 +401,10 @@ export class Game {
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
 					if (movedUnits.includes(card.id)) throw new Error('the card is already moved in this turn');
 					if (playedUnits.includes(card.id) && !card.skills.includes('quick')) throw new Error('you can not move unit that played in this turn');
-					if (this.state.field.front[index].type !== 'empty') throw new Error('there is a unit');
+					if (this.field.front[index].type !== 'empty') throw new Error('there is a unit');
 					const pos = this.findUnitPosition(card)!;
-					this.state.field.front[index] = { type: 'unit', card: card };
-					this.state.field[pos[0]][pos[1]] = { type: 'empty' };
+					this.field.front[index] = { type: 'unit', card: card };
+					this.field[pos[0]][pos[1]] = { type: 'empty' };
 					movedUnits.push(card.id);
 					break;
 				}
@@ -423,9 +428,9 @@ export class Game {
 
 					// Check defender
 					if (!attackee.skills.includes('defender')) {
-						if (attackeePos[0] === 'back1' && this.state.field.back1.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
-						if (attackeePos[0] === 'back2' && this.state.field.back2.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
-						if (attackeePos[0] === 'front' && this.state.field.front.some(x => x.type === 'unit' && x.card.skills.includes('defender') && x.card.owner !== this.turn)) throw new Error('there is a defender');
+						if (attackeePos[0] === 'back1' && this.field.back1.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
+						if (attackeePos[0] === 'back2' && this.field.back2.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
+						if (attackeePos[0] === 'front' && this.field.front.some(x => x.type === 'unit' && x.card.skills.includes('defender') && x.card.owner !== this.turn)) throw new Error('there is a defender');
 					}
 
 					attackedUnits.push(attacker.id);
@@ -479,7 +484,10 @@ export class Game {
 	}
 
 	public damage(target: Player, amount: number) {
-		target.life -= amount;
+		target.life = Math.max(0, target.life - amount);
+		if (target.life === 0) {
+			this.state.winner = target.id === 0 ? 1 : 0;
+		}
 	}
 
 	/**
@@ -488,7 +496,7 @@ export class Game {
 	public async destroy(unit: UnitCard) {
 		const pos = this.findUnitPosition(unit);
 		if (pos === null) throw new Error('no such unit');
-		this.state.field[pos[0]][pos[1]] = { type: 'empty' };
+		this.field[pos[0]][pos[1]] = { type: 'empty' };
 		(unit.owner === 0 ? this.state.player1 : this.state.player2).trash.push(unit);
 
 		const def = this.lookup(unit) as UnitCardDef;
@@ -530,8 +538,8 @@ export class Game {
 	public setUnit(card: UnitCard, section: keyof State['field'], index: number) {
 		const def = this.lookup(card);
 
-		if (this.state.field[section][index].type === 'empty') {
-			this.state.field[section][index] = {
+		if (this.field[section][index].type === 'empty') {
+			this.field[section][index] = {
 				type: 'unit',
 				card: card
 			};
