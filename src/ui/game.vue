@@ -32,6 +32,11 @@
 		<button v-if="selectedHandCard && lookup(game.myHand.find(x => x.id === selectedHandCard)).type === 'spell'" @click="playSpell()">使う</button>
 	</div>
 	<button v-if="isMyTurn" id="end" @click="turnEnd()">ターンエンド</button>
+	<div class="card-info" v-if="infoCard">
+		<h1>{{ infoCard.name }}</h1>
+		<p v-if="infoCard.type === 'unit' && infoCard.attrs.length > 0">{{ infoCard.attrs.map(attr => attr === 'quick' ? 'クイック' : 'ディフェンス' ).join('・') }}</p>
+		<p>{{ infoCard.desc }}</p>
+	</div>
 </div>
 </template>
 
@@ -76,6 +81,7 @@ export default Vue.extend({
 			started: false,
 			redrawed: false,
 			ready: false,
+			infoCard: null,
 		};
 	},
 
@@ -179,6 +185,7 @@ export default Vue.extend({
 		},
 
 		select(card) {
+			this.infoCard = this.lookup(card);
 			if (this.lookup(card).cost > this.game.myEnergy) return;
 			this.selectedHandCard = card.id;
 		},
