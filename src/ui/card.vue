@@ -31,7 +31,7 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
-@keyframes blink {
+@keyframes shield {
 	5% { opacity: 0.0; }
 }
 
@@ -71,7 +71,7 @@ export default Vue.extend({
 		background-repeat no-repeat
 
 	> .defender
-		animation blink 1s ease infinite
+		animation shield 1s ease infinite
 
 	> .cost
 		position absolute

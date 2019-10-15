@@ -5,10 +5,10 @@
 			<p>相手を待っています...</p>
 		</template>
 		<template v-else>
-			<p v-if="isMyTurn">あなたのターンです</p>
+			<p v-if="isMyTurn" class="blink">あなたのターンです</p>
 			<p v-if="started && !isMyTurn">相手を待っています...</p>
 			<p v-if="redrawed && !started">相手を待っています...</p>
-			<p v-if="!redrawed && !started">あなたを待っています...</p>
+			<p v-if="!redrawed && !started" class="blink">あなたを待っています...</p>
 		</template>
 	</header>
 	<div id="opponent-hand" v-if="game">
@@ -241,6 +241,10 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
+@keyframes blink {
+	50% { opacity: 0.0; }
+}
+
 #game
 	text-align center
 	overflow hidden
@@ -253,6 +257,9 @@ export default Vue.extend({
 		width 100%
 		background rgba(0, 0, 0, 0.7)
 		backdrop-filter blur(4px)
+
+		.blink
+			animation blink 1s ease infinite
 
 	> .field
 		perspective 1000px
