@@ -126,10 +126,6 @@ export default Vue.extend({
 					res = await this.cardChoice(payload);
 				} else if (type === 'unitChoice') {
 					res = await this.unitChoice(payload);
-				} else if (type === 'cardChoiceFromDeck') {
-					res = await this.cardChoiceFrom('deck', payload);
-				} else if (type === 'cardChoiceFromTrash') {
-					res = await this.cardChoiceFrom('trash', payload);
 				} else if (type === 'choiceFieldIndex') {
 					res = await this.choiceFieldIndex();
 				}
@@ -222,21 +218,6 @@ export default Vue.extend({
 					game: this.game,
 					owner: owner,
 					my: this.myPlayerNumber
-				}).$on('chosen', card => {
-					res(card.id);
-					vm.$el.parentNode.removeChild(vm.$el);
-				});
-			});
-		},
-
-		cardChoiceFrom(place, { type, costMax }) {
-			let cards = (place === 'deck' ? this.game.myDeck : this.game.myTrash);
-			if (type !== null) cards = cards.filter(c => this.lookup(c).type === type);
-			if (costMax !== null) cards = cards.filter(c => c.cost <= costMax);
-			return new Promise((res) => {
-				const vm = this.$root.new(XCardChoiceDialog, {
-					game: this.game,
-					cards: cards
 				}).$on('chosen', card => {
 					res(card.id);
 					vm.$el.parentNode.removeChild(vm.$el);

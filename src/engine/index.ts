@@ -21,8 +21,7 @@ type Field = {
 type API = {
 	cardChoice: (player: number, cards: Card[]) => Promise<Card>;
 	unitChoice: (player: number, owner: number | null) => Promise<UnitCard>;
-	cardChoiceFromDeck: (player: number, type: 'unit' | 'spell' | null, costMax: number) => Promise<Card>;
-	cardChoiceFromTrash: (player: number, type: 'unit' | 'spell' | null, costMax: number) => Promise<Card>;
+	cardChoiceFrom: (player: number, place: 'deck' | 'trash', filter?: (card: Card) => boolean) => Promise<Card>;
 	choiceFieldIndex: (player: number) => Promise<number>;
 };
 
@@ -326,22 +325,12 @@ export class Game {
 				if (owner !== null && card.owner !== owner) throw new Error('owner not match');
 				return card;
 			},
-			cardChoiceFromDeck: async (player, type, costMax) => {
-				// TODO: 条件に一致するカードが存在するかチェックしてなかったらnullを返す
-				const chosen = await this.q(player, 'cardChoiceFromDeck', { type, costMax });
-				const card = this.findCardFromDeck(player, chosen);
+			cardChoiceFrom: async (player, place: 'deck' | 'trash', filter) => {
+				let cards = (player === 0 ? this.state.player1 : this.state.player2)[place];
+				if (filter) cards = cards.filter(filter);
+				const chosen = await this.q(player, 'cardChoice', cards);
+				const card = cards.find(c => c.id === chosen);
 				if (card == null) throw new Error('no such card');
-				if (this.lookup(card).type !== type) throw new Error('not match type');
-				if (card.cost > costMax) throw new Error('cost over');
-				return card;
-			},
-			cardChoiceFromTrash: async (player, type, costMax) => {
-				// TODO: 条件に一致するカードが存在するかチェックしてなかったらnullを返す
-				const chosen = await this.q(player, 'cardChoiceFromTrash', { type, costMax });
-				const card = this.findCardFromTrash(player, chosen);
-				if (card == null) throw new Error('no such card');
-				if (this.lookup(card).type !== type) throw new Error('not match type');
-				if (card.cost > costMax) throw new Error('cost over');
 				return card;
 			},
 			choiceFieldIndex: async (player) => {
