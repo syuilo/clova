@@ -2,7 +2,9 @@
 <div id="card-choice">
 	<div>
 		<p>カードをひとつ選択してください</p>
-		<x-card v-for="card in cards" :key="card.id" :card="card" @click="select(card)"/>
+		<div>
+			<x-card v-for="card in cards" :key="card.id" :card="card" @click="select(card)"/>
+		</div>
 	</div>
 </div>
 </template>
@@ -43,10 +45,14 @@ export default Vue.extend({
 	> div
 		text-align center
 		margin 64px
+		padding 32px
+		background rgba(0, 0, 0, 0.5)
+		backdrop-filter blur(16px)
 
-		> *
-			margin 0 8px
+		> div
+			> *
+				margin 0 8px
 
-			&.active
-				box-shadow 0 0 8px rgba(255, 0, 0, 0.5)
+				&.active
+					box-shadow 0 0 8px rgba(255, 0, 0, 0.5)
 </style>

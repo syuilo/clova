@@ -277,7 +277,8 @@ export class Game {
 		const deck1 = this.shuffle(this.state.player1.deck);
 		const deck2 = this.shuffle(this.state.player2.deck);
 
-		let player1Cards = [deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!];
+		// 初期手札 先行は4枚
+		let player1Cards = [deck1.shift()!, deck1.shift()!, deck1.shift()!, deck1.shift()!];
 		let player2Cards = [deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!, deck2.shift()!];
 
 		const [player1redraw, player2redraw] = await Promise.all([

@@ -74,8 +74,14 @@ export default Vue.extend({
 	> div
 		text-align center
 		margin 64px
+		padding 32px
+		background rgba(0, 0, 0, 0.5)
+		backdrop-filter blur(16px)
 
 		> div
+			transform scale(0.5)
+			margin -128px 0
+
 			> div
 				margin 16px 0
 
