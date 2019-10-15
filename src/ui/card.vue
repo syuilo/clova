@@ -37,6 +37,7 @@ export default Vue.extend({
 
 .card
 	display inline-block
+	position relative
 	vertical-align bottom
 	box-sizing border-box
 	width 120px

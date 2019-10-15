@@ -252,6 +252,7 @@ export default Vue.extend({
 		left 0
 		width 100%
 		background rgba(0, 0, 0, 0.7)
+		backdrop-filter blur(4px)
 
 	> .field
 		perspective 1000px

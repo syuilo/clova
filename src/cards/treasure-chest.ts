@@ -17,6 +17,6 @@ export default {
 
 		const chosen = await api.cardChoice(game.turn, [drawed1, drawed2]);
 	
-		game.dropHandCard(game.player, chosen);
+		game.dropHandCard(game.player, chosen!);
 	}
 } as CardDef;
