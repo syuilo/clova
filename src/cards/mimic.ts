@@ -5,6 +5,7 @@ import { CardDef } from '../engine';
 export default {
 	id: '7588499b-1c33-4c7b-94b4-740ce457fd02',
 	name: 'ミミック',
+	desc: '<退場> 相手はカードをドローする。',
 	image: 'https://1.bp.blogspot.com/-_8wJqUxj-d4/W4PJlko8nmI/AAAAAAABOIc/Z-MzXgFr2OkbWRKja484G8tVn74a80h5QCLcBGAs/s800/character_game_mimic.png',
 	type: 'unit' as const,
 	power: 4,
