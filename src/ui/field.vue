@@ -63,18 +63,16 @@ export default Vue.extend({
 
 		move(index) {
 			if (this.selected == null) return;
-			if (this.$parent.movedUnits.includes(this.selected.id)) return alert('このユニットは既に移動しました');
-			if (this.$parent.playedUnits.includes(this.selected.id) && !this.selected.attrs.includes('quick')) return alert('プレイしたターンに移動することはできません');
-			this.$parent.movedUnits.push(this.selected.id);
+			if (this.game.movedUnits.includes(this.selected.id)) return alert('このユニットは既に移動しました');
+			if (this.game.playedUnits.includes(this.selected.id) && !this.selected.attrs.includes('quick')) return alert('プレイしたターンに移動することはできません');
 			this.$emit('move', { card: this.selected.id, index: index });
 		},
 
 		onSelected(card, section) {
 			if (this.selected && card.owner !== this.my) {
-				if (this.$parent.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
-				if (this.$parent.playedUnits.includes(this.selected.id) && !this.selected.attrs.includes('quick')) return alert('プレイしたターンに攻撃することはできません');
+				if (this.game.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
+				if (this.game.playedUnits.includes(this.selected.id) && !this.selected.attrs.includes('quick')) return alert('プレイしたターンに攻撃することはできません');
 				if (!card.attrs.includes('defender') && this.game.field[section].some(x => x.type === 'unit' && x.card.attrs.includes('defender') && x.card.owner !== this.my)) return alert('対象のユニットはディフェンダーに守られています');
-				this.$parent.attackedUnits.push(this.selected.id);
 				this.$emit('attack', { card: this.selected.id, target: card.id });
 			} else {
 				this.selected = card;
@@ -83,9 +81,8 @@ export default Vue.extend({
 
 		directAttack() {
 			if (this.selected == null) return;
-			if (this.$parent.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
+			if (this.game.attackedUnits.includes(this.selected.id)) return alert('このユニットは既に攻撃しました');
 			if (this.game.field[this.my === 0 ? 'back2' : 'back1'].some(x => x.type === 'unit' && x.card.attrs.includes('defender'))) return alert('相手はディフェンダーに守られています');
-			this.$parent.attackedUnits.push(this.selected.id);
 			this.$emit('directAttack', { card: this.selected.id });
 		}
 	}

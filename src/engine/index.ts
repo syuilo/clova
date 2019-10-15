@@ -79,6 +79,9 @@ type State = {
 	player2: Player;
 	turn: number;
 	winner: number | null;
+	movedUnits: Card['id'][];
+	attackedUnits: Card['id'][];
+	playedUnits: Card['id'][];
 };
 
 export type ClientState = {
@@ -95,6 +98,9 @@ export type ClientState = {
 	field: Field;
 	turn: number;
 	winner: number | null;
+	movedUnits: Card['id'][];
+	attackedUnits: Card['id'][];
+	playedUnits: Card['id'][];
 };
 
 const ENERGY_MAX = 10;
@@ -167,7 +173,10 @@ export class Game {
 				back2: [empty(), empty(), empty()],
 			},
 			turn: 0,
-			winner: null
+			winner: null,
+			movedUnits: [],
+			attackedUnits: [],
+			playedUnits: [],
 		};
 
 		this.cards = cards;
@@ -202,6 +211,9 @@ export class Game {
 			field: this.field,
 			turn: this.turn,
 			winner: this.state.winner,
+			movedUnits: this.state.movedUnits,
+			attackedUnits: this.state.attackedUnits,
+			playedUnits: this.state.playedUnits,
 		};
 	}
 
@@ -359,9 +371,9 @@ export class Game {
 		const drawed = this.draw(this.turn);
 		if (drawed == null) return;
 
-		const movedUnits: Card['id'][] = [];
-		const attackedUnits: Card['id'][] = [];
-		const playedUnits: Card['id'][] = [];
+		this.state.movedUnits = [];
+		this.state.attackedUnits = [];
+		this.state.playedUnits = [];
 
 		let ended = false;
 		while (!ended) {
@@ -382,7 +394,7 @@ export class Game {
 					this.player.hand = this.player.hand.filter(c => c.id !== cardId);
 	
 					if (cardDef.type === 'unit') {
-						playedUnits.push(card.id);
+						this.state.playedUnits.push(card.id);
 						await this.playUnit(card as UnitCard, action.payload.index);
 					} else if (cardDef.type === 'spell') {
 						await this.useSpell(card);
@@ -399,13 +411,13 @@ export class Game {
 					const card = this.findUnit(cardId);
 					if (card === null) throw new Error('no such card');
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
-					if (movedUnits.includes(card.id)) throw new Error('the card is already moved in this turn');
-					if (playedUnits.includes(card.id) && !card.attrs.includes('quick')) throw new Error('you can not move unit that played in this turn');
+					if (this.state.movedUnits.includes(card.id)) throw new Error('the card is already moved in this turn');
+					if (this.state.playedUnits.includes(card.id) && !card.attrs.includes('quick')) throw new Error('you can not move unit that played in this turn');
 					if (this.field.front[index].type !== 'empty') throw new Error('there is a unit');
 					const pos = this.findUnitPosition(card)!;
 					this.field.front[index] = { type: 'unit', card: card };
 					this.field[pos[0]][pos[1]] = { type: 'empty' };
-					movedUnits.push(card.id);
+					this.state.movedUnits.push(card.id);
 					break;
 				}
 
@@ -417,8 +429,8 @@ export class Game {
 					const attacker = this.findUnit(cardId);
 					if (attacker === null) throw new Error('no such attacker');
 					if (attacker.owner !== this.turn) throw new Error('the attacker is not yours');
-					if (attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
-					if (playedUnits.includes(attacker.id) && !attacker.attrs.includes('quick')) throw new Error('you can not do attack unit that played in this turn');
+					if (this.state.attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
+					if (this.state.playedUnits.includes(attacker.id) && !attacker.attrs.includes('quick')) throw new Error('you can not do attack unit that played in this turn');
 					const attackee = this.findUnit(targetId);
 					if (attackee === null) throw new Error('no such attackee');
 					if (attackee.owner === this.turn) throw new Error('the attackee is yours');
@@ -433,7 +445,7 @@ export class Game {
 						if (attackeePos[0] === 'front' && this.field.front.some(x => x.type === 'unit' && x.card.attrs.includes('defender') && x.card.owner !== this.turn)) throw new Error('there is a defender');
 					}
 
-					attackedUnits.push(attacker.id);
+					this.state.attackedUnits.push(attacker.id);
 
 					// Battle
 					const attackerPower = attacker!.power;
@@ -453,14 +465,14 @@ export class Game {
 					const attacker = this.findUnit(cardId);
 					if (attacker === null) throw new Error('no such attacker');
 					if (attacker.owner !== this.turn) throw new Error('the attacker is not yours');
-					if (attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
+					if (this.state.attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
 					const attackerPos = this.findUnitPosition(attacker)!;
 					// TODO: validate position
 
 					// Check defender
 					if (this.state.field[this.turn === 0 ? 'back2' : 'back1'].some(x => x.type === 'unit' && x.card.attrs.includes('defender'))) throw new Error('there is a defender');
 
-					attackedUnits.push(attacker.id);
+					this.state.attackedUnits.push(attacker.id);
 
 					const target = this.turn === 0 ? this.state.player2 : this.state.player1;
 					this.damage(target, attacker!.power);
