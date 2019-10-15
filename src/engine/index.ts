@@ -327,6 +327,7 @@ export class Game {
 				return card;
 			},
 			cardChoiceFromDeck: async (player, type, costMax) => {
+				// TODO: 条件に一致するカードが存在するかチェックしてなかったらnullを返す
 				const chosen = await this.q(player, 'cardChoiceFromDeck', { type, costMax });
 				const card = this.findCardFromDeck(player, chosen);
 				if (card == null) throw new Error('no such card');
@@ -335,6 +336,7 @@ export class Game {
 				return card;
 			},
 			cardChoiceFromTrash: async (player, type, costMax) => {
+				// TODO: 条件に一致するカードが存在するかチェックしてなかったらnullを返す
 				const chosen = await this.q(player, 'cardChoiceFromTrash', { type, costMax });
 				const card = this.findCardFromTrash(player, chosen);
 				if (card == null) throw new Error('no such card');
