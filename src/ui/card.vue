@@ -2,7 +2,7 @@
 <div class="card" @click="$emit('click', card)" :class="def.type">
 	<header>{{ def.name }}</header>
 	<div class="image" :style="{ backgroundImage: `url('${def.image}')` }"></div>
-	<div class="defender" v-if="def.type === 'unit' && card.skills.includes('defender')"><fa :icon="faShieldAlt"/></div>
+	<div class="defender" v-if="def.type === 'unit' && card.attrs.includes('defender')"><fa :icon="faShieldAlt"/></div>
 	<div class="cost">{{ def.cost }}</div>
 	<div class="power" v-if="def.type === 'unit'" :class="{ inc: card.power > def.power, dec: card.power < def.power }">{{ card.power }}</div>
 </div>

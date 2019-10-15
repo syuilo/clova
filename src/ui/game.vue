@@ -112,8 +112,9 @@ export default Vue.extend({
 				location.href = '/';
 				return;
 			} else if (message.type === 'q') {
-				const { type, payload, game } = message.payload;
+				const { type, payload, game, player1 } = message.payload;
 				this.game = game;
+				this.myPlayerNumber = player1 === name ? 0 : 1;
 
 				let res = null;
 

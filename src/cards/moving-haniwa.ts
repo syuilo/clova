@@ -7,7 +7,7 @@ export default {
 	type: 'unit' as const,
 	power: 1,
 	cost: 2,
-	skills: ['defender'],
+	attrs: ['defender'],
 	setup: async (game, thisCard) => {
 	}
 } as CardDef;

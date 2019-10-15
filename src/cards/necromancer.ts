@@ -8,7 +8,7 @@ export default {
 	type: 'unit' as const,
 	power: 3,
 	cost: 5,
-	skills: [],
+	attrs: [],
 	onPlay: async (game, thisCard, api) => {
 		const chosen = await api.cardChoiceFromTrash(game.turn, 'unit', 3) as UnitCard;
 		const index = await api.choiceFieldIndex(game.turn);

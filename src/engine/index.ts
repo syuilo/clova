@@ -31,7 +31,7 @@ type UnitCardDef = {
 	cost: number;
 	type: 'unit';
 	power: number;
-	skills: ('quick' | 'defender')[];
+	attrs: ('quick' | 'defender')[];
 	setup?: (game: Game, thisCard: Card, api: API) => Promise<void>;
 	onPlay?: (game: Game, thisCard: Card, api: API) => Promise<void>;
 	onDestroy?: (game: Game, thisCard: Card, api: API) => Promise<void>;
@@ -59,7 +59,7 @@ export type UnitCard = {
 	owner: number;
 	cost: number;
 	power: number;
-	skills: ('quick' | 'defender')[];
+	attrs: ('quick' | 'defender')[];
 };
 
 export type Card = UnitCard | SpellCard;
@@ -126,7 +126,7 @@ export class Game {
 					cost: def.cost,
 					...(def.type === 'unit' ? {
 						power: def.power,
-						skills: JSON.parse(JSON.stringify(def.skills)),
+						attrs: JSON.parse(JSON.stringify(def.attrs)),
 					} : {})
 				};
 			}),
@@ -148,7 +148,7 @@ export class Game {
 					cost: def.cost,
 					...(def.type === 'unit' ? {
 						power: def.power,
-						skills: JSON.parse(JSON.stringify(def.skills)),
+						attrs: JSON.parse(JSON.stringify(def.attrs)),
 					} : {})
 				};
 			}),
@@ -400,7 +400,7 @@ export class Game {
 					if (card === null) throw new Error('no such card');
 					if (card.owner !== this.turn) throw new Error('the card is not yours');
 					if (movedUnits.includes(card.id)) throw new Error('the card is already moved in this turn');
-					if (playedUnits.includes(card.id) && !card.skills.includes('quick')) throw new Error('you can not move unit that played in this turn');
+					if (playedUnits.includes(card.id) && !card.attrs.includes('quick')) throw new Error('you can not move unit that played in this turn');
 					if (this.field.front[index].type !== 'empty') throw new Error('there is a unit');
 					const pos = this.findUnitPosition(card)!;
 					this.field.front[index] = { type: 'unit', card: card };
@@ -418,7 +418,7 @@ export class Game {
 					if (attacker === null) throw new Error('no such attacker');
 					if (attacker.owner !== this.turn) throw new Error('the attacker is not yours');
 					if (attackedUnits.includes(attacker.id)) throw new Error('the attacker is already attacked in this turn');
-					if (playedUnits.includes(attacker.id) && !attacker.skills.includes('quick')) throw new Error('you can not do attack unit that played in this turn');
+					if (playedUnits.includes(attacker.id) && !attacker.attrs.includes('quick')) throw new Error('you can not do attack unit that played in this turn');
 					const attackee = this.findUnit(targetId);
 					if (attackee === null) throw new Error('no such attackee');
 					if (attackee.owner === this.turn) throw new Error('the attackee is yours');
@@ -427,10 +427,10 @@ export class Game {
 					// TODO: validate position
 
 					// Check defender
-					if (!attackee.skills.includes('defender')) {
-						if (attackeePos[0] === 'back1' && this.field.back1.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
-						if (attackeePos[0] === 'back2' && this.field.back2.some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
-						if (attackeePos[0] === 'front' && this.field.front.some(x => x.type === 'unit' && x.card.skills.includes('defender') && x.card.owner !== this.turn)) throw new Error('there is a defender');
+					if (!attackee.attrs.includes('defender')) {
+						if (attackeePos[0] === 'back1' && this.field.back1.some(x => x.type === 'unit' && x.card.attrs.includes('defender'))) throw new Error('there is a defender');
+						if (attackeePos[0] === 'back2' && this.field.back2.some(x => x.type === 'unit' && x.card.attrs.includes('defender'))) throw new Error('there is a defender');
+						if (attackeePos[0] === 'front' && this.field.front.some(x => x.type === 'unit' && x.card.attrs.includes('defender') && x.card.owner !== this.turn)) throw new Error('there is a defender');
 					}
 
 					attackedUnits.push(attacker.id);
@@ -458,7 +458,7 @@ export class Game {
 					// TODO: validate position
 
 					// Check defender
-					if (this.state.field[this.turn === 0 ? 'back2' : 'back1'].some(x => x.type === 'unit' && x.card.skills.includes('defender'))) throw new Error('there is a defender');
+					if (this.state.field[this.turn === 0 ? 'back2' : 'back1'].some(x => x.type === 'unit' && x.card.attrs.includes('defender'))) throw new Error('there is a defender');
 
 					attackedUnits.push(attacker.id);
 
@@ -506,7 +506,7 @@ export class Game {
 
 		// 状態リセット
 		unit.power = def.power;
-		unit.skills = JSON.parse(JSON.stringify(def.skills));
+		unit.attrs = JSON.parse(JSON.stringify(def.attrs));
 
 		// 破壊時ハンドラを実行
 		if (def.onDestroy) await def.onDestroy(this, unit, this.api);

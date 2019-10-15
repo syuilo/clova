@@ -8,6 +8,6 @@ export default {
 	cost: 3,
 	action: async (game, thisCard, api) => {
 		const chosen = await api.unitChoice(game.turn, game.turn);
-		if (!chosen.skills.includes('defender')) chosen.skills.push('defender');
+		if (!chosen.attrs.includes('defender')) chosen.attrs.push('defender');
 	}
 } as CardDef;
