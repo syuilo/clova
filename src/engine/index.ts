@@ -19,9 +19,9 @@ type Field = {
 };
 
 type API = {
-	cardChoice: (player: number, cards: Card[]) => Promise<Card>;
+	cardChoice: (player: number, cards: Card[]) => Promise<Card | null>;
 	unitChoice: (player: number, owner: number | null) => Promise<UnitCard>;
-	cardChoiceFrom: (player: number, place: 'deck' | 'trash', filter?: (card: Card) => boolean) => Promise<Card>;
+	cardChoiceFrom: (player: number, place: 'deck' | 'trash', filter?: (card: Card) => boolean) => Promise<Card | null>;
 	choiceFieldIndex: (player: number) => Promise<number>;
 };
 
@@ -313,6 +313,7 @@ export class Game {
 	private get api() {
 		const api: API = {
 			cardChoice: async (player, cards) => {
+				if (cards.length === 0) return null;
 				const chosen = await this.q(player, 'cardChoice', cards);
 				const card = cards.find(c => c.id === chosen);
 				if (card == null) throw new Error('no such card');
@@ -328,6 +329,7 @@ export class Game {
 			cardChoiceFrom: async (player, place: 'deck' | 'trash', filter) => {
 				let cards = (player === 0 ? this.state.player1 : this.state.player2)[place];
 				if (filter) cards = cards.filter(filter);
+				if (cards.length === 0) return null;
 				const chosen = await this.q(player, 'cardChoice', cards);
 				const card = cards.find(c => c.id === chosen);
 				if (card == null) throw new Error('no such card');
