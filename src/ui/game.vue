@@ -114,7 +114,6 @@ export default Vue.extend({
 			} else if (message.type === 'q') {
 				const { type, payload, game, player1 } = message.payload;
 				this.game = game;
-				this.myPlayerNumber = player1 === name ? 0 : 1;
 
 				let res = null;
 

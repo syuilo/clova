@@ -16,6 +16,7 @@ type Room = {
 	player1ws: WebSocket | null;
 	player2ws: WebSocket | null;
 	started: boolean;
+	waitingInput: ({ type: string; payload: any; } | null)[];
 };
 
 const app = new Koa();
@@ -49,10 +50,12 @@ const games: Record<string, Game> = {};
 const rooms: Record<string, Room> = {};
 let matchings: { users: [string, string]; deck: string[]; cb: Function; }[] = [];
 
-function createGame(player1Deck: string[], player2Deck: string[], room: Room): Game {
+function createGame(player1Deck: string[], player2Deck: string[], room: Room) {
 	let game: Game;
 
 	const controller = new Controller((player, type, payload, logs) => {
+		room.waitingInput[player] = { type, payload };
+	
 		(player === 0 ? room.player1ws! : room.player2ws!).send(JSON.stringify({
 			type: 'q',
 			payload: {
@@ -82,15 +85,16 @@ wss.on('connection', (ws, req) => {
 	if (name == null) return;
 	console.log('Connected', name);
 
-	const room = new URL('http://localhost' + req.url!).searchParams.get('room');
-	if (room == null) {
+	const roomId = new URL('http://localhost' + req.url!).searchParams.get('room');
+	if (roomId == null) {
 		ws.on('message', async message => {
 			const msg = JSON.parse(message.toString());
 			const matching = matchings.find(matching => matching.users.includes(name) && matching.users.includes(msg.target));
 			if (matching) {
 				// Create room
-				const roomId = Math.floor(Math.random() * 100000).toString();
-				rooms[roomId] = {
+				const _roomId = Math.floor(Math.random() * 100000).toString();
+				const waitingInput = [null, null];
+				rooms[_roomId] = {
 					player1: matching.users[0],
 					player2: matching.users[1],
 					player1ready: false,
@@ -98,28 +102,31 @@ wss.on('connection', (ws, req) => {
 					player1ws: null,
 					player2ws: null,
 					started: false,
+					waitingInput: waitingInput
 				};
-				const game = createGame(matching.deck, msg.deck, rooms[roomId]);
-				games[roomId] = game;
-				matching.cb(roomId);
+				const game = createGame(matching.deck, msg.deck, rooms[_roomId]);
+				games[_roomId] = game;
+				matching.cb(_roomId);
 				matchings = matchings.filter(x => x !== matching);
-				ws.send(JSON.stringify({ room: roomId }));
+				ws.send(JSON.stringify({ room: _roomId }));
 			} else {
-				matchings.push({ users: [name, msg.target], deck: msg.deck, cb: (roomId) => {
-					ws.send(JSON.stringify({ room: roomId }));
+				matchings.push({ users: [name, msg.target], deck: msg.deck, cb: (_roomId) => {
+					ws.send(JSON.stringify({ room: _roomId }));
 				}});
 			}
 		});
 	} else {
-		if (rooms[room] == null) return;
+		const room = rooms[roomId];
+		if (room == null) return;
+		const playerNumber = room.player1 === name ? 0 : 1;
 
-		const game = games[room];
-		if (rooms[room].player1 === name) rooms[room].player1ws = ws;
-		if (rooms[room].player2 === name) rooms[room].player2ws = ws;
+		const game = games[roomId];
+		if (room.player1 === name) room.player1ws = ws;
+		if (room.player2 === name) room.player2ws = ws;
 
 		ws.send(JSON.stringify({ type: 'game', payload: {
-			game: game.getStateForClient(rooms[room].player1 === name ? 0 : 1),
-			player1: rooms[room].player1
+			game: game.getStateForClient(playerNumber),
+			player1: room.player1
 		}}));
 
 		ws.on('message', async message => {
@@ -127,27 +134,40 @@ wss.on('connection', (ws, req) => {
 			console.log(msg.type, msg.payload);
 		
 			if (msg.type === 'ready') {
-				if (rooms[room].player1 === name) {
-					rooms[room].player1ready = true;
+				if (room.player1 === name) {
+					room.player1ready = true;
 				} else {
-					rooms[room].player2ready = true;
+					room.player2ready = true;
 				}
-				if (rooms[room].player1ready && rooms[room].player2ready && !rooms[room].started) {
-					rooms[room].started = true;
+				if (room.player1ready && room.player2ready && !room.started) {
+					room.started = true;
 					await game.start();
-					rooms[room].player1ws!.send(JSON.stringify({ type: 'end', payload: {
+					room.player1ws!.send(JSON.stringify({ type: 'end', payload: {
 						game: game.getStateForClient(0),
 					}}));
-					rooms[room].player2ws!.send(JSON.stringify({ type: 'end', payload: {
+					room.player2ws!.send(JSON.stringify({ type: 'end', payload: {
 						game: game.getStateForClient(1),
 					}}));
+				}
+				if (room.player1ready && room.player2ready && room.started && room.waitingInput[playerNumber]) {
+					const { type, payload } = room.waitingInput[playerNumber]!;
+					(room.player1 === name ? room.player1ws! : room.player2ws!).send(JSON.stringify({
+						type: 'q',
+						payload: {
+							type: type,
+							payload: payload,
+							game: game.getStateForClient(playerNumber),
+						}
+					}));
 				}
 			} else if (msg.type === 'action') {
 				const action = {
 					date: new Date(),
-					player: rooms[room].player1 === name ? 0 : 1,
+					player: playerNumber,
 					payload: msg.payload,
 				};
+
+				room.waitingInput[playerNumber] = null;
 		
 				game.controller.input(action);
 			}
