@@ -35,6 +35,7 @@ type UnitCardDef = {
 	setup?: (game: Game, thisCard: Card, api: API) => Promise<void>;
 	onPlay?: (game: Game, thisCard: Card, api: API) => Promise<void>;
 	onDestroy?: (game: Game, thisCard: Card, api: API) => Promise<void>;
+	onMyTurnEnd?: (game: Game, thisCard: Card, api: API) => Promise<void>;
 };
 
 type SpellCardDef = {
@@ -189,6 +190,10 @@ export class Game {
 		];
 	}
 
+	public get units() {
+		return this.cells.filter(cell => cell.type === 'unit').map((cell: UnitCell) => cell.card);
+	}
+
 	public getStateForClient(player: number): ClientState {
 		return {
 			opponentHandCount: player === 0 ? this.state.player2.hand.length : this.state.player1.hand.length,
@@ -315,9 +320,9 @@ export class Game {
 				return card;
 			},
 			unitChoice: async (player, owner) => {
-				if (owner === 0 && !this.cells.some(cell => cell.type === 'unit' && cell.card.owner === 0)) return null;
-				if (owner === 1 && !this.cells.some(cell => cell.type === 'unit' && cell.card.owner === 1)) return null;
-				if (owner === null && !this.cells.some(cell => cell.type === 'unit')) return null;
+				if (owner === 0 && !this.units.some(card => card.owner === 0)) return null;
+				if (owner === 1 && !this.units.some(card => card.owner === 1)) return null;
+				if (owner === null && this.units.length === 0) return null;
 				const chosen = await this.q(player, 'unitChoice', owner);
 				const card = this.findUnit(chosen);
 				if (card == null) throw new Error('no such card');
@@ -479,6 +484,12 @@ export class Game {
 				default: throw new Error('Unknown main phase action: ' + action.type);
 			}
 			if (this.state.winner !== null) ended = true;
+		}
+
+		for (const unit of this.units) {
+			const def = this.lookup(unit) as UnitCardDef;
+			// ターンエンド時ハンドラを実行
+			if (def.onMyTurnEnd && unit.owner === this.turn) await def.onMyTurnEnd(this, unit, this.api);
 		}
 
 		const nextTurn = this.turn === 0 ? 1 : 0;

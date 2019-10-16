@@ -1,4 +1,7 @@
 import { CardDef } from '../engine';
+import fire from './fire';
+import recover from './recover';
+import powerUp from './power-up';
 
 export default {
 	id: '2902ba9e-f1ca-4e25-8320-674fc75b7bd4',
@@ -9,7 +12,11 @@ export default {
 	power: 2,
 	cost: 5,
 	attrs: [],
-	setup: async (game, thisCard) => {
-		// TODO
+	onMyTurnEnd: async (game, thisCard, api) => {
+		const a = game.instantiate(game.turn, fire);
+		const b = game.instantiate(game.turn, recover);
+		const c = game.instantiate(game.turn, powerUp);
+		const chosen = await api.cardChoice(game.turn, [a, b, c]);
+		game.player.hand.push(chosen!);
 	}
 } as CardDef;

@@ -13,6 +13,6 @@ export default {
 	onPlay: async (game, thisCard) => {
 		const card = game.instantiate(thisCard.owner, fire);
 		card.cost = 0;
-		(thisCard.owner === 0 ? game.state.player1 : game.state.player2).hand.push(card);
+		game.player.hand.push(card);
 	}
 } as CardDef;

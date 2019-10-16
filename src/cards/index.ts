@@ -13,5 +13,7 @@ import godDog from './god-dog';
 import necromancer from './necromancer';
 import fire from './fire';
 import fireWitch from './fire-witch';
+import recover from './recover';
+import powerUp from './power-up';
 
-export const CARDS = [slime, treasureChest, golem, dragon, witch, energyDrink, mimic, movingHaniwa, goldenDragon, barrier, cracking, godDog, necromancer, fire, fireWitch];
+export const CARDS = [slime, treasureChest, golem, dragon, witch, energyDrink, mimic, movingHaniwa, goldenDragon, barrier, cracking, godDog, necromancer, fire, fireWitch, recover, powerUp];
