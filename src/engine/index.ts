@@ -1,5 +1,6 @@
 import { Controller } from './controller';
 import * as seedrandom from 'seedrandom';
+import * as uuid from 'uuid/v4';
 
 type Cell = EmptyCell | UnitCell;
 
@@ -117,24 +118,9 @@ export class Game {
 			type: 'empty' as const
 		});
 
-		let cardId = 0;
-
 		const player1 = {
 			id: 0,
-			deck: player1Deck.map(id => {
-				const def = cards.find(x => x.id === id)!;
-				cardId++;
-				return {
-					def: id,
-					id: cardId.toString(),
-					owner: 0,
-					cost: def.cost,
-					...(def.type === 'unit' ? {
-						power: def.power,
-						attrs: JSON.parse(JSON.stringify(def.attrs)),
-					} : {})
-				};
-			}),
+			deck: player1Deck.map(id => this.instantiate(0, cards.find(x => x.id === id)!)),
 			hand: [],
 			trash: [],
 			energy: 3,
@@ -143,20 +129,7 @@ export class Game {
 
 		const player2 = {
 			id: 1,
-			deck: player2Deck.map(id => {
-				const def = cards.find(x => x.id === id)!;
-				cardId++;
-				return {
-					def: id,
-					id: cardId.toString(),
-					owner: 1,
-					cost: def.cost,
-					...(def.type === 'unit' ? {
-						power: def.power,
-						attrs: JSON.parse(JSON.stringify(def.attrs)),
-					} : {})
-				};
-			}),
+			deck: player2Deck.map(id => this.instantiate(1, cards.find(x => x.id === id)!)),
 			hand: [],
 			trash: [],
 			energy: 3,
@@ -181,6 +154,19 @@ export class Game {
 		this.cards = cards;
 		this.controller = controller;
 		this.rng = seedrandom(seed);
+	}
+
+	public instantiate(owner: number, def: CardDef) {
+		return {
+			def: def.id,
+			id: uuid(),
+			owner: owner,
+			cost: def.cost,
+			...(def.type === 'unit' ? {
+				power: def.power,
+				attrs: JSON.parse(JSON.stringify(def.attrs)),
+			} : {})
+		};
 	}
 
 	public get turn() {
@@ -469,7 +455,7 @@ export class Game {
 					this.state.attackedUnits.push(attacker.id);
 
 					const target = this.turn === 0 ? this.state.player2 : this.state.player1;
-					this.damage(target, attacker!.power);
+					this.damagePlayer(target, attacker!.power);
 					break;
 				}
 	
@@ -492,10 +478,17 @@ export class Game {
 		}
 	}
 
-	public damage(target: Player, amount: number) {
+	public damagePlayer(target: Player, amount: number) {
 		target.life = Math.max(0, target.life - amount);
 		if (target.life === 0) {
 			this.state.winner = target.id === 0 ? 1 : 0;
+		}
+	}
+
+	public damageUnit(target: UnitCard, amount: number) {
+		target.power = Math.max(0, target.power - amount);
+		if (target.power === 0) {
+			this.destroy(target);
 		}
 	}
 

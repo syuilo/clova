@@ -18,6 +18,7 @@
 		"koa-router": "7.4.0",
 		"koa-send": "5.0.0",
 		"seedrandom": "3.0.5",
+		"uuid": "3.3.3",
 		"vue": "2.6.10",
 		"ws": "7.1.2"
 	},
@@ -28,6 +29,7 @@
 		"@types/koa": "2.0.50",
 		"@types/koa-router": "7.0.42",
 		"@types/koa-send": "4.1.2",
+		"@types/uuid": "3.4.5",
 		"ts-node": "8.4.1",
 		"typescript": "3.6.3",
 		"webpack-cli": "3.3.9",
