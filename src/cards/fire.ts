@@ -8,7 +8,8 @@ export default {
 	type: 'spell' as const,
 	cost: 2,
 	action: async (game, thisCard, api) => {
-		const chosen = await api.unitChoice(game.turn, game.turn);
+		const chosen = await api.unitChoice(game.turn, game.turn === 0 ? 1 : 0);
+		if (chosen === null) return;
 		game.damageUnit(chosen, 2);
 	}
 } as CardDef;

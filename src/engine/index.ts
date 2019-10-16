@@ -21,7 +21,7 @@ type Field = {
 
 type API = {
 	cardChoice: (player: number, cards: Card[]) => Promise<Card | null>;
-	unitChoice: (player: number, owner: number | null) => Promise<UnitCard>;
+	unitChoice: (player: number, owner: number | null) => Promise<UnitCard | null>;
 	cardChoiceFrom: (player: number, place: 'deck' | 'trash', filter?: (card: Card) => boolean) => Promise<Card | null>;
 	choiceFieldIndex: (player: number) => Promise<number>;
 };
@@ -181,6 +181,14 @@ export class Game {
 		return this.state.field;
 	}
 
+	public get cells() {
+		return [
+			...this.state.field.back1,
+			...this.state.field.back2,
+			...this.state.field.front,
+		];
+	}
+
 	public getStateForClient(player: number): ClientState {
 		return {
 			opponentHandCount: player === 0 ? this.state.player2.hand.length : this.state.player1.hand.length,
@@ -307,6 +315,9 @@ export class Game {
 				return card;
 			},
 			unitChoice: async (player, owner) => {
+				if (owner === 0 && !this.cells.some(cell => cell.type === 'unit' && cell.card.owner === 0)) return null;
+				if (owner === 1 && !this.cells.some(cell => cell.type === 'unit' && cell.card.owner === 1)) return null;
+				if (owner === null && !this.cells.some(cell => cell.type === 'unit')) return null;
 				const chosen = await this.q(player, 'unitChoice', owner);
 				const card = this.findUnit(chosen);
 				if (card == null) throw new Error('no such card');
@@ -365,10 +376,10 @@ export class Game {
 					const card = this.player.hand.find(c => c.id === cardId);
 					if (card == null) throw new Error('no such card');
 					const cardDef = this.lookup(card);
-					if (this.player.energy < cardDef.cost) throw new Error('no enough energy');
+					if (this.player.energy < card.cost) throw new Error('no enough energy');
 
 					// エネルギー消費
-					this.player.energy -= cardDef.cost;
+					this.player.energy -= card.cost;
 
 					// 手札から抜く
 					this.player.hand = this.player.hand.filter(c => c.id !== cardId);

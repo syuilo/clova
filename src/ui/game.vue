@@ -25,7 +25,7 @@
 		<x-card v-for="card in game.myHand" :key="card.id" class="card"
 			:card="card"
 			@click="select(card)"
-			:class="{ selected: selectedHandCard === card.id, disabled: lookup(card).cost > game.myEnergy }"/>
+			:class="{ selected: selectedHandCard === card.id, disabled: card.cost > game.myEnergy }"/>
 		<div class="energy">{{ game.myEnergy }}</div>
 	</div>
 	<div>
@@ -186,7 +186,7 @@ export default Vue.extend({
 
 		select(card) {
 			this.infoCard = this.lookup(card);
-			if (this.lookup(card).cost > this.game.myEnergy) return;
+			if (card.cost > this.game.myEnergy) return;
 			this.selectedHandCard = card.id;
 		},
 

@@ -8,6 +8,7 @@ export default {
 	cost: 3,
 	action: async (game, thisCard, api) => {
 		const chosen = await api.unitChoice(game.turn, game.turn);
+		if (chosen === null) return;
 		chosen.power += 3;
 	}
 } as CardDef;
